@@ -1,0 +1,26 @@
+id: T-close-purplelife-gaps
+title: Close remaining PurpleLife product gaps
+intent: >-
+  Password reset mail for every user, session refresh, live care chat,
+  OAuth and Whoop code gaps, Android Play signing path, Flutter Ploy shell
+  with working Dark and System, and a sign-in button that is not clipped.
+  One PR. Do not deploy, upload, wipe data, or change an existing password.
+partition: app
+depends_on: []
+risk: high
+acceptance:
+  - "Reset stores a token, emails via RESEND_API_KEY, and can be redeemed"
+  - "Unknown email does not reveal existence; failed send is not success"
+  - "Refresh rotates without weakening access JWT checks"
+  - "Care chat updates without a manual reload"
+  - "Flutter Dark and System switch and the shell is Today Journal Browse More"
+  - "Sign-in primary button is not clipped"
+  - "Play script refuses a debug-signed bundle"
+  - "No existing password changed and no mail sent to a person"
+state: landed
+claimant: cursor-cloud-agent
+lease_expires: ""
+evidence:
+  - "bun test password-reset sessions care-live bindings"
+  - "flutter analyze clean"
+  - "flutter test green"

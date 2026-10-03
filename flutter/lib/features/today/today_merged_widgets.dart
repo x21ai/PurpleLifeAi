@@ -435,7 +435,7 @@ class TodayRecommendedInline extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     item.title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
                       color: PloyColors.ink,
@@ -718,7 +718,7 @@ class TodayProtocolTeaser extends StatelessWidget {
               children: [
                 Text(
                   copy.title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
                     color: PloyColors.ink,

@@ -67,6 +67,7 @@ class AuthRepository {
         final result = await bootstrapRecoveryFromUri(uri);
         return RecoveryBootstrap(ok: result.ok);
       },
+      resolveAccessToken: config.usesCloudflareAuth ? accessToken : null,
     );
     PurpleClient.bind(_client);
   }
@@ -80,6 +81,52 @@ class AuthRepository {
 
   late final PurpleClient _client;
   Session? _workerSession;
+  Future<Session?>? _refreshInFlight;
+
+  bool _accessIsExpired(Session session) {
+    final exp = jwtExpiryUnix(session.accessToken);
+    if (exp == null) return session.isExpired;
+    final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    return exp <= now;
+  }
+
+  bool _accessNeedsRefresh(Session session) {
+    final exp = jwtExpiryUnix(session.accessToken);
+    if (exp == null) return session.isExpired;
+    final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    return exp - now <= 120;
+  }
+
+  Future<Session?> _refreshWorkerSession() {
+    final existing = _refreshInFlight;
+    if (existing != null) return existing;
+    final run = _refreshWorkerSessionOnce();
+    _refreshInFlight = run;
+    return run.whenComplete(() {
+      if (identical(_refreshInFlight, run)) _refreshInFlight = null;
+    });
+  }
+
+  Future<Session?> _refreshWorkerSessionOnce() async {
+    final current = _workerSession;
+    final refresh = current?.refreshToken;
+    if (refresh == null || refresh.isEmpty) {
+      if (current != null && _accessIsExpired(current)) {
+        await signOut();
+        return null;
+      }
+      return current;
+    }
+    try {
+      final data = await _postAuth('refresh', {'refresh_token': refresh});
+      return await _adoptWorkerPayload(data);
+    } catch (error, stack) {
+      debugPrint('[AuthRepository] refresh failed: $error\n$stack');
+      if (current != null && !_accessIsExpired(current)) return current;
+      await signOut();
+      return null;
+    }
+  }
 
   PurpleClient get client => _client;
 
@@ -94,7 +141,11 @@ class AuthRepository {
 
   bool get isAuthenticated {
     final session = currentSession;
-    return session != null && !session.isExpired;
+    if (session == null) return false;
+    if (!_config.usesCloudflareAuth) return !session.isExpired;
+    if (!_accessIsExpired(session)) return true;
+    final refresh = session.refreshToken;
+    return refresh != null && refresh.isNotEmpty;
   }
 
   SupabaseClient get _supabase =>
@@ -130,8 +181,9 @@ class AuthRepository {
 
   /// Refreshes or verifies the saved session.
   ///
-  /// Cloudflare JWTs are not refreshable. An expired or rejected token signs
-  /// the user out. A still-valid token is kept when verify cannot be reached.
+  /// Access JWTs stay one hour. A refresh token rotates them. A rejected
+  /// refresh signs the user out. A still-valid access token is kept when
+  /// verify cannot be reached.
   Future<Session?> ensureValidSession() async {
     if (_config.usesCloudflareAuth) return _ensureWorkerSession();
     return _ensureSupabaseSession();
@@ -288,9 +340,9 @@ class AuthRepository {
     if (_config.usesCloudflareAuth) {
       final session = _workerSession;
       if (session == null) return null;
-      if (session.isExpired) {
-        await signOut();
-        return null;
+      if (_accessNeedsRefresh(session)) {
+        final refreshed = await _refreshWorkerSession();
+        return refreshed?.accessToken;
       }
       return session.accessToken;
     }
@@ -335,6 +387,18 @@ class AuthRepository {
     });
   }
 
+  /// Redeems a one-time reset token for any account. Does not require a session.
+  Future<void> completePasswordReset({
+    required String resetToken,
+    required String password,
+  }) async {
+    await _postAuth('update-password', {
+      'reset_token': resetToken,
+      'token': resetToken,
+      'password': password,
+    });
+  }
+
   Future<void> _updatePassword(String password) async {
     if (!_config.usesCloudflareAuth) {
       await _supabase.auth.updateUser(UserAttributes(password: password));
@@ -355,11 +419,11 @@ class AuthRepository {
   }
 
   Future<Session?> _ensureWorkerSession() async {
-    final session = _workerSession;
+    var session = _workerSession;
     if (session == null) return null;
-    if (session.isExpired) {
-      await signOut();
-      return null;
+    if (_accessNeedsRefresh(session)) {
+      session = await _refreshWorkerSession();
+      if (session == null) return null;
     }
     try {
       final response = await _http.get(
@@ -370,6 +434,10 @@ class AuthRepository {
         },
       );
       if (response.statusCode == 401) {
+        final refreshed = await _refreshWorkerSession();
+        if (refreshed != null && refreshed.accessToken != session.accessToken) {
+          return refreshed;
+        }
         await signOut();
         return null;
       }
@@ -430,13 +498,20 @@ class AuthRepository {
         ),
       );
     }
-    final token = params['access_token'] ?? params['token'];
+    final resetToken = params['reset_token'];
+    final token = params['access_token'];
+    if (resetToken != null &&
+        resetToken.isNotEmpty &&
+        (token == null || token.isEmpty)) {
+      return const RecoveryBootstrapResult(ok: false);
+    }
     if (token == null || token.isEmpty) {
       return const RecoveryBootstrapResult(ok: false);
     }
     try {
       await _adoptWorkerPayload({
         'access_token': token,
+        'refresh_token': params['refresh_token'],
         'expires_in': int.tryParse(params['expires_in'] ?? ''),
         'user': {
           'id': params['user_id'] ?? jwtClaim(token, 'sub'),
@@ -469,6 +544,7 @@ class AuthRepository {
     }
     final email = userMap['email']?.toString() ?? jwtClaim(token, 'email');
     final expiresIn = _expiresInSeconds(data['expires_in'], token);
+    final refresh = data['refresh_token']?.toString();
     final user = User(
       id: userId,
       appMetadata: const {},
@@ -479,6 +555,7 @@ class AuthRepository {
     );
     final session = Session(
       accessToken: token,
+      refreshToken: refresh == null || refresh.isEmpty ? null : refresh,
       tokenType: 'bearer',
       expiresIn: expiresIn,
       user: user,
@@ -559,6 +636,7 @@ class AuthRepository {
         key: _workerSessionKey,
         value: jsonEncode({
           'access_token': session.accessToken,
+          'refresh_token': session.refreshToken,
           'expires_at': exp,
           'user_id': session.user.id,
           'email': session.user.email,
@@ -582,16 +660,21 @@ class AuthRepository {
         await _clearPersistedSession(_workerSessionKey);
         return;
       }
+      final refresh = decoded['refresh_token']?.toString();
       final exp = decoded['expires_at'];
       if (exp is int) {
         final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-        if (exp <= now) {
+        if (exp <= now && (refresh == null || refresh.isEmpty)) {
           await _clearPersistedSession(_workerSessionKey);
           return;
         }
       }
       await _adoptWorkerPayload({
         'access_token': token,
+        'refresh_token': refresh,
+        'expires_in': exp is int
+            ? exp - (DateTime.now().millisecondsSinceEpoch ~/ 1000)
+            : null,
         'user': {
           'id': userId,
           'email': decoded['email'],

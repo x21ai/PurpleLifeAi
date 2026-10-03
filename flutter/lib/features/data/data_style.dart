@@ -10,7 +10,11 @@ class DataPalette {
 
   factory DataPalette.dark() {
     final tokens = PurpleTokens.loaded;
-    return DataPalette._(tokens.colorsFor('dark'), tokens.glassFor('dark'));
+    final appearance = PloyColors.appearance;
+    return DataPalette._(
+      tokens.colorsFor(appearance),
+      tokens.glassFor(appearance),
+    );
   }
 
   final PurpleColorTokens _colors;

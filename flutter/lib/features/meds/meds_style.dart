@@ -10,7 +10,11 @@ class MedsPalette {
 
   factory MedsPalette.dark() {
     final tokens = PurpleTokens.loaded;
-    return MedsPalette._(tokens.colorsFor('dark'), tokens.glassFor('dark'));
+    final appearance = PloyColors.appearance;
+    return MedsPalette._(
+      tokens.colorsFor(appearance),
+      tokens.glassFor(appearance),
+    );
   }
 
   final PurpleColorTokens _colors;

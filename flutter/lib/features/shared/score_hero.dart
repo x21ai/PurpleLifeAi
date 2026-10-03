@@ -20,25 +20,25 @@ ScoreBand bandForScore(double score) {
 LinearGradient gradientForBand(ScoreBand band) {
   switch (band) {
     case ScoreBand.excellent:
-      return const LinearGradient(
+      return LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: [Color(0xFFE5F8F1), PloyColors.surface],
       );
     case ScoreBand.good:
-      return const LinearGradient(
+      return LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: [Color(0xFFE3F4FD), PloyColors.surface],
       );
     case ScoreBand.fair:
-      return const LinearGradient(
+      return LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: [Color(0xFFFFF6E3), PloyColors.surface],
       );
     case ScoreBand.attention:
-      return const LinearGradient(
+      return LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: [Color(0xFFFFEEEB), PloyColors.surface],

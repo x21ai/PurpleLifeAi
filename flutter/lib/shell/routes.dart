@@ -46,6 +46,7 @@ abstract final class AppRoutes {
   static const seizuresNew = '/seizures/new';
   static const hydration = '/hydration';
   static const journal = '/journal';
+  static const browse = '/browse';
   static const journalNew = '/journal/new';
   static const meds = '/meds';
   static const medsHistory = '/meds/history';
@@ -130,6 +131,7 @@ abstract final class AppRoutes {
     seizuresNew,
     hydration,
     journal,
+    browse,
     journalNew,
     meds,
     medsHistory,

@@ -13,6 +13,8 @@ PurpleThemeMode parseThemeMode(String? raw) {
       return PurpleThemeMode.light;
     case 'system':
       return PurpleThemeMode.system;
+    case 'dark':
+      return PurpleThemeMode.dark;
     default:
       return PurpleThemeMode.light;
   }
@@ -45,14 +47,35 @@ String themeModeDescription(PurpleThemeMode mode) {
     case PurpleThemeMode.light:
       return 'Default';
     case PurpleThemeMode.system:
-      return 'Uses the light PurpleLife look';
+      return 'Matches this device';
     case PurpleThemeMode.dark:
-      return 'Uses the light PurpleLife look';
+      return 'Dark PurpleLife';
   }
 }
 
-Brightness resolveThemeBrightness(PurpleThemeMode mode) {
-  return Brightness.light;
+Brightness resolveThemeBrightness(
+  PurpleThemeMode mode, {
+  Brightness platform = Brightness.light,
+}) {
+  switch (mode) {
+    case PurpleThemeMode.light:
+      return Brightness.light;
+    case PurpleThemeMode.dark:
+      return Brightness.dark;
+    case PurpleThemeMode.system:
+      return platform;
+  }
+}
+
+ThemeMode themeModeFor(PurpleThemeMode mode) {
+  switch (mode) {
+    case PurpleThemeMode.light:
+      return ThemeMode.light;
+    case PurpleThemeMode.dark:
+      return ThemeMode.dark;
+    case PurpleThemeMode.system:
+      return ThemeMode.system;
+  }
 }
 
 class ThemePreferenceNotifier extends StateNotifier<PurpleThemeMode> {

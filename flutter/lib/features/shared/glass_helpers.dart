@@ -17,28 +17,30 @@ class CanvasBackground extends StatelessWidget {
   /// When true, paints the sign-in/register atmospheric gradient from React.
   final bool auth;
 
-  static const canvasColor = PloyColors.canvas;
-  static const authBaseColor = PloyColors.canvas;
+  static Color get canvasColor => PloyColors.canvas;
+  static Color get authBaseColor => PloyColors.canvas;
   static const gradientCenter = Color(0x148E61CF);
-
-  static const _authGradient = BoxDecoration(
-    color: authBaseColor,
-    gradient: LinearGradient(
-      begin: Alignment.topCenter,
-      end: Alignment.bottomCenter,
-      colors: [authBaseColor, canvasColor],
-    ),
-  );
 
   @override
   Widget build(BuildContext context) {
+    final canvas = canvasColor;
+    final authBase = authBaseColor;
     return SizedBox.expand(
       child: Stack(
         fit: StackFit.expand,
         children: [
-          const ColoredBox(color: canvasColor),
+          ColoredBox(color: canvas),
           if (auth) ...[
-            const DecoratedBox(decoration: _authGradient),
+            DecoratedBox(
+              decoration: BoxDecoration(
+                color: authBase,
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [authBase, canvas],
+                ),
+              ),
+            ),
             const DecoratedBox(
               decoration: BoxDecoration(
                 gradient: RadialGradient(

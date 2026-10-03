@@ -248,8 +248,8 @@ class _TodayLogExpandBodyState extends ConsumerState<TodayLogExpandBody> {
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
-                leading: const Icon(Icons.videocam_outlined, color: PloyColors.ink),
-                title: const Text('Record video', style: TextStyle(color: PloyColors.ink)),
+                leading: Icon(Icons.videocam_outlined, color: PloyColors.ink),
+                title: Text('Record video', style: TextStyle(color: PloyColors.ink)),
                 subtitle: Text(
                   'Up to 60 seconds',
                   style: TextStyle(color: PloyColors.fromWhiteAlpha(0.6)),
@@ -260,8 +260,8 @@ class _TodayLogExpandBodyState extends ConsumerState<TodayLogExpandBody> {
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.video_library_outlined, color: PloyColors.ink),
-                title: const Text(
+                leading: Icon(Icons.video_library_outlined, color: PloyColors.ink),
+                title: Text(
                   'Choose from library',
                   style: TextStyle(color: PloyColors.ink),
                 ),
@@ -374,7 +374,7 @@ class _TodayLogExpandBodyState extends ConsumerState<TodayLogExpandBody> {
           minLines: 2,
           maxLines: 4,
           maxLength: 500,
-          style: const TextStyle(color: PloyColors.ink, fontSize: 14),
+          style: TextStyle(color: PloyColors.ink, fontSize: 14),
           decoration: InputDecoration(
             hintText: 'What happened? Type here, or tap voice or video.',
             hintStyle: TextStyle(color: PloyColors.fromWhiteAlpha(0.35)),
@@ -418,7 +418,7 @@ class _TodayLogExpandBodyState extends ConsumerState<TodayLogExpandBody> {
                       ? null
                       : () => setState(() => _media.removeAt(i)),
                   deleteIconColor: PloyColors.fromWhiteAlpha(0.8),
-                  labelStyle: const TextStyle(color: PloyColors.ink, fontSize: 12),
+                  labelStyle: TextStyle(color: PloyColors.ink, fontSize: 12),
                   backgroundColor: PloyColors.fromWhiteAlpha(0.08),
                   side: BorderSide(color: PloyColors.fromWhiteAlpha(0.16)),
                 ),

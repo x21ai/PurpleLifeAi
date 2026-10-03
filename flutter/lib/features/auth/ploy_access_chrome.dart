@@ -1,24 +1,22 @@
 import 'package:flutter/material.dart';
 
-import '../../design/ploy_colors.dart';
-
 /// Light access chrome from the live Ploy pilot
 /// (`ploy-staging` `.purplelife-pilot` tokens and `PrivacyShield`).
 class PloyAccessColors {
   PloyAccessColors._();
 
-  static const canvas = PloyColors.canvas;
-  static const surface = PloyColors.surface;
-  static const rail = PloyColors.rail;
-  static const tint = PloyColors.tint;
-  static const line = PloyColors.line;
-  static const ink = PloyColors.ink;
-  static const muted = PloyColors.muted;
-  static const accent = PloyColors.accent;
-  static const pink = PloyColors.pink;
-  static const coral = PloyColors.coral;
-  static const blue = PloyColors.blue;
-  static const shieldShadow = PloyColors.shieldShadow;
+  static const canvas = Color(0xFFF8F7FA);
+  static const surface = Color(0xFFFFFFFF);
+  static const rail = Color(0xFFF1EFF4);
+  static const tint = Color(0xFFF0E9FB);
+  static const line = Color(0xFFDDDBE1);
+  static const ink = Color(0xFF18161D);
+  static const muted = Color(0xFF67646F);
+  static const accent = Color(0xFF8E61CF);
+  static const pink = Color(0xFFF070BE);
+  static const coral = Color(0xFFFF7769);
+  static const blue = Color(0xFF009BF0);
+  static const shieldShadow = Color(0xFF6C59D6);
 }
 
 /// Soft layered shield from `PrivacyShield` in
@@ -186,17 +184,33 @@ class PloyAccessPage extends StatelessWidget {
         selectionColor: Color(0x598E61CF),
       ),
     );
+    final keyboard = MediaQuery.viewInsetsOf(context).bottom;
     return Theme(
       data: theme,
       child: Scaffold(
         backgroundColor: PloyAccessColors.canvas,
+        resizeToAvoidBottomInset: true,
         body: SafeArea(
-          child: Align(
-            alignment: Alignment.topCenter,
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 430),
-              child: child,
-            ),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final viewport = constraints.maxHeight.isFinite
+                  ? constraints.maxHeight
+                  : MediaQuery.sizeOf(context).height;
+              return Align(
+                alignment: Alignment.topCenter,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxWidth: 430,
+                    minHeight: viewport,
+                    maxHeight: viewport,
+                  ),
+                  child: Padding(
+                    padding: EdgeInsets.only(bottom: keyboard),
+                    child: child,
+                  ),
+                ),
+              );
+            },
           ),
         ),
       ),
@@ -220,9 +234,15 @@ class PloyAccessHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final height = MediaQuery.sizeOf(context).height;
+    final shield = height < 700
+        ? 150.0
+        : height < 820
+            ? 210.0
+            : shieldMaxWidth;
     return Column(
       children: [
-        PrivacyShieldGraphic(maxWidth: shieldMaxWidth),
+        PrivacyShieldGraphic(maxWidth: shield),
         Transform.translate(
           offset: const Offset(0, -8),
           child: Column(

@@ -24,7 +24,8 @@ class PurpleApp extends ConsumerWidget {
     final lightTheme = buildPurpleLightTheme(tokens: tokens);
     final darkTheme = buildPurpleDarkTheme(tokens: tokens);
     final appearance = ref.watch(themePreferenceProvider);
-    final brightness = resolveThemeBrightness(appearance);
+    final platform = WidgetsBinding.instance.platformDispatcher.platformBrightness;
+    final brightness = resolveThemeBrightness(appearance, platform: platform);
     final canvasColor = brightness == Brightness.light
         ? lightTheme.scaffoldBackgroundColor
         : purpleCanvasDark;
@@ -32,13 +33,12 @@ class PurpleApp extends ConsumerWidget {
     return MaterialApp.router(
       title: 'Purple',
       debugShowCheckedModeBanner: false,
-      // Ploy ships one light look. Stored Dark or System preferences stay
-      // saved, and both themes below are that same light palette.
-      themeMode: ThemeMode.light,
+      themeMode: themeModeFor(appearance),
       theme: lightTheme,
       darkTheme: darkTheme,
       routerConfig: router,
       builder: (context, child) {
+        PloyColors.bind(Theme.of(context).brightness);
         final mq = MediaQuery.of(context);
         Widget content = child ?? const SizedBox.shrink();
 
@@ -47,9 +47,9 @@ class PurpleApp extends ConsumerWidget {
             fit: StackFit.expand,
             children: [
               content,
-              const ColoredBox(
+              ColoredBox(
                 color: purpleCanvasDark,
-                child: Center(child: CircularProgressIndicator()),
+                child: const Center(child: CircularProgressIndicator()),
               ),
             ],
           );
@@ -65,7 +65,7 @@ class PurpleApp extends ConsumerWidget {
                 child: Text(
                   message,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(color: PloyColors.muted),
+                  style: TextStyle(color: PloyColors.muted),
                 ),
               ),
             ),

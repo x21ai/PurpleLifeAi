@@ -1,10 +1,5 @@
 // Auth session refresh tests for signed-in data providers.
 //
-// Production verification user (pmt@eigital.com):
-//   uuid bb160030-2ed6-45d7-8a5a-7f6f7879e9bb
-//   medications=2, medication_doses=33, journal_entries=2, biometrics=3920
-//   (queried 2026-07-04 via Supabase Management API on xxnzmfzsjplrutrgbzxy)
-//
 // ## authSessionProvider.future antipattern
 //
 // todayDataProvider, scoreSnapshotProvider, and medsDataProvider currently use:
@@ -181,7 +176,7 @@ Session _fakeSession() {
     accessToken: 'test-token',
     tokenType: 'bearer',
     user: const User(
-      id: 'bb160030-2ed6-45d7-8a5a-7f6f7879e9bb',
+      id: '11111111-1111-4111-8111-111111111111',
       appMetadata: {},
       userMetadata: {},
       aud: 'authenticated',

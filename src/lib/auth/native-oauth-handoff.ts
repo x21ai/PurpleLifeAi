@@ -6,6 +6,7 @@ export function nativeOAuthHandoffUrl(
   state: string,
   session: {
     access_token: string;
+    refresh_token?: string;
     expires_in?: number;
     user?: { id?: string; email?: string | null };
   },
@@ -20,6 +21,7 @@ export function nativeOAuthHandoffUrl(
 
   const url = new URL(decoded);
   url.searchParams.set("access_token", session.access_token);
+  if (session.refresh_token) url.searchParams.set("refresh_token", session.refresh_token);
   url.searchParams.set("expires_in", String(session.expires_in ?? 3600));
   url.searchParams.set("token_type", "bearer");
   if (session.user?.id) url.searchParams.set("user_id", session.user.id);

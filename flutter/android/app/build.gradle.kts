@@ -1,8 +1,38 @@
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
+
+val keystoreProperties = Properties()
+val keystorePropertiesFile = rootProject.file("key.properties")
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(FileInputStream(keystorePropertiesFile))
+}
+
+fun signingProp(vararg names: String): String? {
+    for (name in names) {
+        val fromFile = keystoreProperties.getProperty(name)?.trim()
+        if (!fromFile.isNullOrEmpty()) return fromFile
+        val fromEnv = System.getenv(name)?.trim()
+        if (!fromEnv.isNullOrEmpty()) return fromEnv
+    }
+    return null
+}
+
+val uploadStoreFile = signingProp("PURPLE_UPLOAD_STORE_FILE", "storeFile")
+val uploadStorePassword = signingProp("PURPLE_UPLOAD_STORE_PASSWORD", "storePassword")
+val uploadKeyAlias = signingProp("PURPLE_UPLOAD_KEY_ALIAS", "keyAlias")
+val uploadKeyPassword = signingProp("PURPLE_UPLOAD_KEY_PASSWORD", "keyPassword")
+val hasUploadKeystore = listOf(
+    uploadStoreFile,
+    uploadStorePassword,
+    uploadKeyAlias,
+    uploadKeyPassword,
+).all { !it.isNullOrEmpty() }
 
 android {
     namespace = "org.purplelife.app"
@@ -22,11 +52,27 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        if (hasUploadKeystore) {
+            create("release") {
+                storeFile = file(uploadStoreFile!!)
+                storePassword = uploadStorePassword
+                keyAlias = uploadKeyAlias
+                keyPassword = uploadKeyPassword
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            // Play bundles must use the upload keystore. Local `flutter run --release`
+            // can still use the debug key when the owner keystore is absent.
+            // scripts/flutter-android-release.sh refuses that fallback.
+            signingConfig = if (hasUploadKeystore) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
+            }
         }
     }
 }

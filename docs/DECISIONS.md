@@ -16,7 +16,13 @@ Also see `mem/index.md` for deeper architectural notes.
 
 ---
 
-### 2026-10-03 - Flutter app uses the live Ploy light system [ACTIVE]
+### 2026-10-03 - Sessions refresh, reset mail, and appearance follow Dark and System [ACTIVE]
+
+- **Decision:** Password reset looks up any `auth_users` row, stores a hashed one-time token, and emails a link with Worker secret `RESEND_API_KEY`. Unknown addresses return the same success body. A failed send returns 502. Access JWTs stay 3600 seconds and `verifyJwt` still rejects expiry and `role=password_reset`. A separate opaque refresh token lasts 30 days, is stored hashed, and rotates on use. Care chat on Cloudflare polls. Flutter `ThemeMode` follows Light, Dark, and System. The signed-in shell tabs are Today, Journal, Browse, and More. The light Ploy palette stays the light appearance. Dark uses a separate dark ramp.
+- **Reason:** Reset mail was discarded, sessions died at one hour, care chat did not update, and Dark/System still rendered light on the old Today/Data/Plan/Ask Maya shell.
+- **Implications:** Do not lengthen the access JWT or skip expiry checks. Do not log reset links or tokens. Do not tell the client whether an email exists. Do not deploy or upload from the change that added this. Google, Apple, and Whoop redirect URIs stay owner console steps. Play upload stays blocked without an owner keystore.
+
+### 2026-10-03 - Flutter app uses the live Ploy light system [SUPERSEDED by 2026-10-03 appearance and shell]
 
 - **Decision:** Every Flutter screen a tester can open uses the live Ploy light palette from `ploy-staging` `.purplelife-pilot` (canvas `#f8f7fa`, surface white, ink `#18161d`, muted `#67646f`, accent `#8e61cf`). Sign-in, reset, and welcome keep the `PrivacyShield` access chrome. Signed-in screens use the same tokens for canvas, cards, type, sheets, and empty states. There is no Flutter dark shell. Appearance Dark and System store a preference and still render this light look.
 - **Reason:** Testers still saw the old dark liquid-glass app after the sign-in-only port. The operator said nothing should stay in the old design.
@@ -32,7 +38,7 @@ Also see `mem/index.md` for deeper architectural notes.
 
 - **Decision:** Flutter builds default `DATA_BACKEND` to `cloudflare`. That path signs in with `POST /api/auth/sign-in` (and OAuth start at `GET /api/auth/oauth/{provider}`) and sends the HS256 `iss=purplelife.org` JWT on Worker `/api/data/*` and `/api/storage/*`. It does not call `https://auth.purplelife.org` for login. `DATA_BACKEND=supabase` is the only path that initializes supabase_flutter.
 - **Reason:** Live Worker data APIs reject Supabase GoTrue ES256 session tokens with 401. Web already uses the Workers JWT. TestFlight through build 31 still used supabase_flutter.
-- **Implications:** Do not upload a Flutter build that still sends GoTrue tokens to Cloudflare data APIs. Native OAuth completion depends on the www callback handing `access_token` to `org.purplelife.app://auth-callback`; that handoff ships in the same change as the client and takes effect only after a www deploy. Worker JWTs are not refreshable (1 hour, then sign-out). Supabase stays in the tree for rollback. Do not delete Supabase or wipe D1/R2 for this cutover.
+- **Implications:** Do not upload a Flutter build that still sends GoTrue tokens to Cloudflare data APIs. Native OAuth completion depends on the www callback handing `access_token` to `org.purplelife.app://auth-callback`; that handoff ships in the same change as the client and takes effect only after a www deploy. Access JWTs stay 1 hour. Refresh is a separate rotating token (see 2026-10-03 sessions decision). Supabase stays in the tree for rollback. Do not delete Supabase or wipe D1/R2 for this cutover.
 
 ### 2026-10-01 - Flutter dart-define Doppler is x21/prd_cloudflare [ACTIVE]
 

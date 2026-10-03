@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { isCloudflareBackend } from "@/lib/cloudflare/data-backend";
 import { getBindings, setRequestBindings } from "@/lib/cloudflare/bindings";
 import { createUserWithPassword, findUserByEmail } from "@/lib/cloudflare/auth/service";
-import { signJwt } from "@/lib/cloudflare/auth/jwt";
+import { issueSession } from "@/lib/cloudflare/auth/sessions";
 
 export const Route = createFileRoute("/api/auth/sign-up")({
   server: {
@@ -36,22 +36,16 @@ export const Route = createFileRoute("/api/auth/sign-up")({
         }
 
         const user = await createUserWithPassword(body.email, body.password);
-        const secret = getBindings().AUTH_JWT_SECRET;
-        if (!secret) {
-          return Response.json({ error: "AUTH_JWT_SECRET not configured" }, { status: 500 });
+        try {
+          const session = await issueSession({ id: user.id, email: user.email });
+          return Response.json(session);
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "Auth not configured";
+          if (message.includes("AUTH_JWT_SECRET")) {
+            return Response.json({ error: "AUTH_JWT_SECRET not configured" }, { status: 500 });
+          }
+          throw error;
         }
-        const accessToken = await signJwt(secret, {
-          sub: user.id,
-          email: user.email ?? undefined,
-          expSeconds: 3600,
-        });
-
-        return Response.json({
-          access_token: accessToken,
-          token_type: "bearer",
-          expires_in: 3600,
-          user,
-        });
       },
     },
   },

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../design/ploy_colors.dart';
 import '../../design/purple_type.dart';
 
 import '../../design/tokens.dart';
@@ -19,8 +20,8 @@ class NarrativeBlock extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = PurpleTokens.loaded;
-    final colors = tokens.colorsFor('dark');
-    final glass = tokens.glassFor('dark');
+    final colors = tokens.colorsFor(PloyColors.appearance);
+    final glass = tokens.glassFor(PloyColors.appearance);
     final purple = parseTokenColor(colors.purplePrimary);
 
     return Container(

@@ -15,6 +15,7 @@ import {
   rewriteFlutterAssetPath,
 } from "./lib/flutter-web-routing";
 import { setRequestBindings } from "./lib/cloudflare/bindings";
+import { handleWorkerDirect } from "./lib/cloudflare/auth/direct-routes";
 import type { PurpleWorkerBindings } from "./lib/cloudflare/env";
 
 type ServerEntry = {
@@ -312,6 +313,8 @@ export default {
 
       // Worker API routes and OAuth token exchange stay on TanStack handlers.
       if (pathname.startsWith("/api/") || pathname.startsWith("/oauth/")) {
+        const direct = await handleWorkerDirect(request, pathname);
+        if (direct) return applyFlutterApiCors(request, direct);
         return applyFlutterApiCors(request, await handleTanStackRequest(request, env, ctx));
       }
 

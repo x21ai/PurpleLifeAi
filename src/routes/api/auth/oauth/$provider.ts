@@ -50,7 +50,8 @@ export const Route = createFileRoute("/api/auth/oauth/$provider")({
           authUrl.searchParams.set("redirect_uri", callback);
           authUrl.searchParams.set("response_type", "code");
           authUrl.searchParams.set("scope", "name email");
-          authUrl.searchParams.set("response_mode", "query");
+          // Apple requires form_post when the authorize request asks for name or email.
+          authUrl.searchParams.set("response_mode", "form_post");
           authUrl.searchParams.set("state", encodeURIComponent(redirectTo ?? siteOrigin));
           return Response.redirect(authUrl.toString(), 302);
         }
