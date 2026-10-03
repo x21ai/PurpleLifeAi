@@ -11,6 +11,7 @@ import 'reports_repository.dart';
 import 'models/report_row.dart';
 import 'widgets/report_tiles.dart';
 import 'widgets/reports_layout.dart';
+import '../../design/ploy_colors.dart';
 
 /// Uploaded lab documents mirroring web `/reports/documents`.
 class ReportsDocumentsScreen extends ConsumerWidget {
@@ -162,7 +163,7 @@ class _DocumentsBodyState extends State<_DocumentsBody> {
           Text(
             data.loadError!,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.55),
+                  color: PloyColors.fromWhiteAlpha(0.55),
                 ),
           ),
           const SizedBox(height: 16),
@@ -186,28 +187,28 @@ class _DocumentsBodyState extends State<_DocumentsBody> {
         TextField(
           controller: _searchController,
           onChanged: (v) => setState(() => _query = v),
-          style: const TextStyle(color: Colors.white),
+          style: const TextStyle(color: PloyColors.ink),
           decoration: InputDecoration(
             hintText: 'Search reports',
-            hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.4)),
+            hintStyle: TextStyle(color: PloyColors.fromWhiteAlpha(0.4)),
             prefixIcon: Icon(
               Icons.search,
-              color: Colors.white.withValues(alpha: 0.5),
+              color: PloyColors.fromWhiteAlpha(0.5),
             ),
             filled: true,
-            fillColor: Colors.white.withValues(alpha: 0.05),
+            fillColor: PloyColors.fromWhiteAlpha(0.05),
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
               borderSide: BorderSide(
-                color: Colors.white.withValues(alpha: 0.08),
+                color: PloyColors.fromWhiteAlpha(0.08),
               ),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
               borderSide: BorderSide(
-                color: Colors.white.withValues(alpha: 0.08),
+                color: PloyColors.fromWhiteAlpha(0.08),
               ),
             ),
           ),
@@ -246,11 +247,11 @@ class _DocumentsBodyState extends State<_DocumentsBody> {
             icon: Icon(
               Icons.close,
               size: 16,
-              color: Colors.white.withValues(alpha: 0.6),
+              color: PloyColors.fromWhiteAlpha(0.6),
             ),
             label: Text(
               'Clear filters',
-              style: TextStyle(color: Colors.white.withValues(alpha: 0.6)),
+              style: TextStyle(color: PloyColors.fromWhiteAlpha(0.6)),
             ),
           ),
         ],
@@ -268,7 +269,7 @@ class _DocumentsBodyState extends State<_DocumentsBody> {
             child: Text(
               'No reports match these filters.',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.65),
+                    color: PloyColors.fromWhiteAlpha(0.65),
                   ),
             ),
           )
@@ -282,7 +283,7 @@ class _DocumentsBodyState extends State<_DocumentsBody> {
         Text(
           'Bulk download (zip) and re-run failed extractions stay on the web app for now.',
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Colors.white.withValues(alpha: 0.45),
+                color: PloyColors.fromWhiteAlpha(0.45),
                 height: 1.4,
               ),
         ),
@@ -323,7 +324,7 @@ class _FilterRow extends StatelessWidget {
             label.toUpperCase(),
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
                   letterSpacing: 1.1,
-                  color: Colors.white.withValues(alpha: 0.4),
+                  color: PloyColors.fromWhiteAlpha(0.4),
                 ),
           ),
           const SizedBox(height: 6),
@@ -365,8 +366,8 @@ class _Chip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: selected
-          ? Colors.white.withValues(alpha: 0.16)
-          : Colors.white.withValues(alpha: 0.05),
+          ? PloyColors.fromWhiteAlpha(0.16)
+          : PloyColors.fromWhiteAlpha(0.05),
       borderRadius: BorderRadius.circular(999),
       child: InkWell(
         onTap: onTap,
@@ -378,8 +379,8 @@ class _Chip extends StatelessWidget {
             label,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: selected
-                      ? Colors.white.withValues(alpha: 0.95)
-                      : Colors.white.withValues(alpha: 0.7),
+                      ? PloyColors.fromWhiteAlpha(0.95)
+                      : PloyColors.fromWhiteAlpha(0.7),
                   fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
                 ),
           ),
@@ -401,8 +402,8 @@ class _StatChip extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
-        color: Colors.white.withValues(alpha: 0.05),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        color: PloyColors.fromWhiteAlpha(0.05),
+        border: Border.all(color: PloyColors.fromWhiteAlpha(0.08)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -411,14 +412,14 @@ class _StatChip extends StatelessWidget {
             label.toUpperCase(),
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
                   letterSpacing: 1.1,
-                  color: Colors.white.withValues(alpha: 0.45),
+                  color: PloyColors.fromWhiteAlpha(0.45),
                 ),
           ),
           const SizedBox(height: 4),
           Text(
             value,
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.95),
+                  color: PloyColors.fromWhiteAlpha(0.95),
                 ),
           ),
         ],

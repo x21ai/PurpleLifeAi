@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../design/tokens.dart';
 import 'glass_helpers.dart';
+import '../../design/ploy_colors.dart';
 
 /// Today three-up score tile mirroring web `ScoreTile`
 /// (`src/components/ui-oura/v2/score-tile.tsx`). The active tile renders as a
@@ -51,7 +52,7 @@ class ScoreTile extends StatelessWidget {
                 fontWeight: FontWeight.w300,
                 height: 1,
                 letterSpacing: tokens.typography.letterSpacing('numericDisplay'),
-                color: Colors.white.withValues(alpha: 0.96),
+                color: PloyColors.fromWhiteAlpha(0.96),
               ),
             ),
           ),
@@ -67,8 +68,8 @@ class ScoreTile extends StatelessWidget {
             letterSpacing: tokens.typography.letterSpacing('labelEyebrow'),
             fontWeight: active ? FontWeight.w600 : FontWeight.w500,
             color: active
-                ? Colors.white.withValues(alpha: 0.85)
-                : Colors.white.withValues(alpha: 0.55),
+                ? PloyColors.fromWhiteAlpha(0.85)
+                : PloyColors.fromWhiteAlpha(0.55),
           ),
         ),
       ],
@@ -113,8 +114,8 @@ class ScoreTile extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(18),
-        splashColor: Colors.white.withValues(alpha: 0.06),
-        highlightColor: Colors.white.withValues(alpha: 0.04),
+        splashColor: PloyColors.fromWhiteAlpha(0.06),
+        highlightColor: PloyColors.fromWhiteAlpha(0.04),
         child: ConstrainedBox(
           constraints: BoxConstraints(minHeight: minTarget),
           child: content,

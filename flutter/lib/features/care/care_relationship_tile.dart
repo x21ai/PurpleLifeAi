@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'care_scopes.dart';
 import '../shared/glass_helpers.dart';
+import '../../design/ploy_colors.dart';
 
 /// Glass list row for a care relationship.
 class CareRelationshipTile extends StatelessWidget {
@@ -41,14 +42,14 @@ class CareRelationshipTile extends StatelessWidget {
                     Text(
                       title,
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.95),
+                            color: PloyColors.fromWhiteAlpha(0.95),
                           ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       role != null ? careRoleLabels[role]! : subtitle,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.6),
+                            color: PloyColors.fromWhiteAlpha(0.6),
                           ),
                     ),
                     if (statusLabel != null) ...[
@@ -56,7 +57,7 @@ class CareRelationshipTile extends StatelessWidget {
                       Text(
                         statusLabel,
                         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                              color: Colors.white.withValues(alpha: 0.45),
+                              color: PloyColors.fromWhiteAlpha(0.45),
                             ),
                       ),
                     ],
@@ -65,7 +66,7 @@ class CareRelationshipTile extends StatelessWidget {
               ),
               Icon(
                 trailing ?? Icons.chevron_right,
-                color: Colors.white.withValues(alpha: onTap == null ? 0.35 : 0.55),
+                color: onTap == null ? PloyColors.line : PloyColors.muted,
               ),
             ],
           ),

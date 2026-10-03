@@ -6,6 +6,7 @@ import '../../core/data/purple_client.dart';
 
 import '../../design/purple_type.dart';
 import '../shared/glass_helpers.dart';
+import '../../design/ploy_colors.dart';
 
 /// Contact form wired to `contact_messages` (web `/contact`).
 class ContactScreen extends ConsumerStatefulWidget {
@@ -96,10 +97,10 @@ class _ContactScreenState extends ConsumerState<ContactScreen> {
               TextButton.icon(
                 onPressed: () => context.go('/settings'),
                 icon: Icon(Icons.arrow_back,
-                    color: Colors.white.withValues(alpha: 0.55)),
+                    color: PloyColors.fromWhiteAlpha(0.55)),
                 label: Text(
                   'Settings',
-                  style: TextStyle(color: Colors.white.withValues(alpha: 0.55)),
+                  style: TextStyle(color: PloyColors.fromWhiteAlpha(0.55)),
                 ),
               ),
               const SizedBox(height: 16),
@@ -107,7 +108,7 @@ class _ContactScreenState extends ConsumerState<ContactScreen> {
                 'CONTACT',
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
                       letterSpacing: 1.2,
-                      color: Colors.white.withValues(alpha: 0.45),
+                      color: PloyColors.fromWhiteAlpha(0.45),
                     ),
               ),
               const SizedBox(height: 8),
@@ -122,14 +123,14 @@ class _ContactScreenState extends ConsumerState<ContactScreen> {
                       fontFamily: PurpleType.serif,
                       fontSize: 40,
                       height: 1.05,
-                      color: Colors.white.withValues(alpha: 0.95),
+                      color: PloyColors.fromWhiteAlpha(0.95),
                     ),
               ),
               const SizedBox(height: 12),
               Text(
                 'A real person reads every message. Usually within a day.',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.65),
+                      color: PloyColors.fromWhiteAlpha(0.65),
                       height: 1.5,
                     ),
               ),
@@ -144,14 +145,14 @@ class _ContactScreenState extends ConsumerState<ContactScreen> {
                         'Thank you.',
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
                               fontFamily: PurpleType.serif,
-                              color: Colors.white.withValues(alpha: 0.95),
+                              color: PloyColors.fromWhiteAlpha(0.95),
                             ),
                       ),
                       const SizedBox(height: 8),
                       Text(
                         "We'll get back to you at ${_emailController.text} as soon as we can.",
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Colors.white.withValues(alpha: 0.55),
+                              color: PloyColors.fromWhiteAlpha(0.55),
                             ),
                       ),
                     ],
@@ -204,7 +205,7 @@ class _ContactScreenState extends ConsumerState<ContactScreen> {
         Text(
           label,
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Colors.white.withValues(alpha: 0.55),
+                color: PloyColors.fromWhiteAlpha(0.55),
               ),
         ),
         const SizedBox(height: 6),
@@ -212,19 +213,19 @@ class _ContactScreenState extends ConsumerState<ContactScreen> {
           controller: controller,
           keyboardType: keyboard,
           maxLines: maxLines,
-          style: TextStyle(color: Colors.white.withValues(alpha: 0.92)),
+          style: TextStyle(color: PloyColors.fromWhiteAlpha(0.92)),
           decoration: InputDecoration(
             filled: true,
-            fillColor: Colors.white.withValues(alpha: 0.04),
+            fillColor: PloyColors.fromWhiteAlpha(0.04),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide:
-                  BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+                  BorderSide(color: PloyColors.fromWhiteAlpha(0.1)),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide:
-                  BorderSide(color: Colors.white.withValues(alpha: 0.25)),
+                  BorderSide(color: PloyColors.fromWhiteAlpha(0.25)),
             ),
           ),
         ),

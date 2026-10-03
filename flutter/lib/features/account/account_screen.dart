@@ -9,6 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../auth/auth_state.dart';
 import '../../core/providers/core_providers.dart';
+import '../../design/ploy_colors.dart';
 import '../../design/tokens.dart';
 import '../../shell/routes.dart';
 import '../settings/settings_hub.dart';
@@ -1104,8 +1105,8 @@ class _TwoFactorSectionState extends State<_TwoFactorSection> {
                   : Icons.shield_outlined,
               size: 16,
               color: _hasFactor == true
-                  ? const Color(0xFF6FB394)
-                  : const Color(0xFFB084D1),
+                  ? PloyColors.mint
+                  : PloyColors.accent,
             ),
             const SizedBox(width: 8),
             Text('Two-factor authentication', style: _titleStyle(context)),

@@ -14,6 +14,7 @@ import '../shared/glass_helpers.dart' hide GlassSurface;
 import '../shared/loading_skeleton.dart';
 import 'models/report_row.dart';
 import 'reports_repository.dart';
+import '../../design/ploy_colors.dart';
 
 /// Single uploaded report mirroring web `/reports/$reportId`.
 ///
@@ -112,11 +113,11 @@ class _ReportShell extends StatelessWidget {
                 onPressed: () => context.go(AppRoutes.reportsDocuments),
                 icon: Icon(
                   Icons.arrow_back,
-                  color: Colors.white.withValues(alpha: 0.55),
+                  color: PloyColors.fromWhiteAlpha(0.55),
                 ),
                 label: Text(
                   'Reports',
-                  style: TextStyle(color: Colors.white.withValues(alpha: 0.55)),
+                  style: TextStyle(color: PloyColors.fromWhiteAlpha(0.55)),
                 ),
               ),
               const SizedBox(height: 16),
@@ -189,14 +190,14 @@ class _ReportDetailBodyState extends ConsumerState<_ReportDetailBody> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF1E1830),
+        backgroundColor: PloyColors.surface,
         title: const Text(
           'Delete this report?',
-          style: TextStyle(color: Colors.white),
+          style: TextStyle(color: PloyColors.ink),
         ),
         content: Text(
           'This removes the file and its extracted values. This cannot be undone.',
-          style: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
+          style: TextStyle(color: PloyColors.fromWhiteAlpha(0.7)),
         ),
         actions: [
           TextButton(
@@ -250,7 +251,7 @@ class _ReportDetailBodyState extends ConsumerState<_ReportDetailBody> {
           doc.displayTitle,
           style: Theme.of(context).textTheme.displaySmall?.copyWith(
                 height: 1.05,
-                color: Colors.white.withValues(alpha: 0.95),
+                color: PloyColors.fromWhiteAlpha(0.95),
               ),
         ),
         const SizedBox(height: 8),
@@ -263,7 +264,7 @@ class _ReportDetailBodyState extends ConsumerState<_ReportDetailBody> {
               '${detail.metrics.length} value${detail.metrics.length == 1 ? '' : 's'}',
           ].join(' · '),
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.white.withValues(alpha: 0.65),
+                color: PloyColors.fromWhiteAlpha(0.65),
               ),
         ),
         const SizedBox(height: 20),
@@ -297,14 +298,14 @@ class _ReportDetailBodyState extends ConsumerState<_ReportDetailBody> {
                   'AI EXPLANATION',
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
                         letterSpacing: 1.1,
-                        color: Colors.white.withValues(alpha: 0.45),
+                        color: PloyColors.fromWhiteAlpha(0.45),
                       ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'Plain-English AI explanations are generated on the web app. Once created there, the explanation appears here.',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.7),
+                        color: PloyColors.fromWhiteAlpha(0.7),
                         height: 1.5,
                       ),
                 ),
@@ -351,7 +352,7 @@ class _ReportDetailBodyState extends ConsumerState<_ReportDetailBody> {
           Text(
             'Extracted values',
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.95),
+                  color: PloyColors.fromWhiteAlpha(0.95),
                 ),
           ),
           const SizedBox(height: 4),
@@ -361,7 +362,7 @@ class _ReportDetailBodyState extends ConsumerState<_ReportDetailBody> {
               _panelLabel(entry.key),
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
                     letterSpacing: 1.1,
-                    color: Colors.white.withValues(alpha: 0.45),
+                    color: PloyColors.fromWhiteAlpha(0.45),
                   ),
             ),
             const SizedBox(height: 8),
@@ -376,7 +377,7 @@ class _ReportDetailBodyState extends ConsumerState<_ReportDetailBody> {
           Text(
             'No structured values were extracted. You can still view the original file above.',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.65),
+                  color: PloyColors.fromWhiteAlpha(0.65),
                   height: 1.4,
                 ),
           ),
@@ -424,7 +425,7 @@ class _MetricTile extends StatelessWidget {
                 Text(
                   metric.label,
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.95),
+                        color: PloyColors.fromWhiteAlpha(0.95),
                       ),
                 ),
                 if (metric.referenceLow != null || metric.referenceHigh != null)
@@ -432,7 +433,7 @@ class _MetricTile extends StatelessWidget {
                     'ref ${metric.referenceLow ?? '–'}–${metric.referenceHigh ?? '–'} ${metric.unit ?? ''}'
                         .trim(),
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.white.withValues(alpha: 0.55),
+                          color: PloyColors.fromWhiteAlpha(0.55),
                         ),
                   ),
               ],
@@ -445,13 +446,13 @@ class _MetricTile extends StatelessWidget {
                       ? _dangerColor
                       : metric.flag == 'low'
                           ? _warningColor
-                          : Colors.white.withValues(alpha: 0.95),
+                          : PloyColors.fromWhiteAlpha(0.95),
                 ),
           ),
           const SizedBox(width: 8),
           Icon(
             Icons.chevron_right,
-            color: Colors.white.withValues(alpha: 0.4),
+            color: PloyColors.fromWhiteAlpha(0.4),
           ),
         ],
       ),
@@ -477,14 +478,14 @@ class _InfoCard extends StatelessWidget {
             label,
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
                   letterSpacing: 1.1,
-                  color: Colors.white.withValues(alpha: 0.45),
+                  color: PloyColors.fromWhiteAlpha(0.45),
                 ),
           ),
           const SizedBox(height: 8),
           Text(
             body,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.85),
+                  color: PloyColors.fromWhiteAlpha(0.85),
                   height: 1.5,
                 ),
           ),
@@ -505,7 +506,7 @@ class _StatusPill extends StatelessWidget {
       'ready' => ('READY', const Color(0xFF6FCF97)),
       'failed' => ('FAILED', _dangerColor),
       'processing' => ('PROCESSING', _warningColor),
-      _ => (status.toUpperCase(), Colors.white.withValues(alpha: 0.75)),
+      _ => (status.toUpperCase(), PloyColors.fromWhiteAlpha(0.75)),
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -580,9 +581,9 @@ class _ActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = danger ? _dangerColor : Colors.white.withValues(alpha: 0.9);
+    final color = danger ? _dangerColor : PloyColors.fromWhiteAlpha(0.9);
     return Material(
-      color: Colors.white.withValues(alpha: 0.06),
+      color: PloyColors.fromWhiteAlpha(0.06),
       borderRadius: BorderRadius.circular(14),
       child: InkWell(
         onTap: onTap,

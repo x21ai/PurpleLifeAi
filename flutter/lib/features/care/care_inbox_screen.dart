@@ -9,6 +9,7 @@ import '../shared/glass_helpers.dart';
 import '../shared/loading_skeleton.dart';
 import 'care_repository.dart';
 import 'incoming_care_invites_card.dart';
+import '../../design/ploy_colors.dart';
 
 enum _InboxFilter { all, meds, journal, other }
 
@@ -170,11 +171,11 @@ class _InboxBody extends StatelessWidget {
           onPressed: () => context.go(AppRoutes.settingsSharing),
           icon: Icon(
             Icons.arrow_back,
-            color: Colors.white.withValues(alpha: 0.55),
+            color: PloyColors.fromWhiteAlpha(0.55),
           ),
           label: Text(
             'Sharing and access',
-            style: TextStyle(color: Colors.white.withValues(alpha: 0.55)),
+            style: TextStyle(color: PloyColors.fromWhiteAlpha(0.55)),
           ),
         ),
         const SizedBox(height: 16),
@@ -182,7 +183,7 @@ class _InboxBody extends StatelessWidget {
           'CAREGIVER INBOX',
           style: Theme.of(context).textTheme.labelSmall?.copyWith(
                 letterSpacing: 1.2,
-                color: Colors.white.withValues(alpha: 0.45),
+                color: PloyColors.fromWhiteAlpha(0.45),
               ),
         ),
         const SizedBox(height: 8),
@@ -190,14 +191,14 @@ class _InboxBody extends StatelessWidget {
           'Changes waiting\nfor you',
           style: Theme.of(context).textTheme.displaySmall?.copyWith(
                 height: 1.02,
-                color: Colors.white.withValues(alpha: 0.95),
+                color: PloyColors.fromWhiteAlpha(0.95),
               ),
         ),
         const SizedBox(height: 12),
         Text(
           'Caregivers proposed these edits to your record. Nothing is applied until you approve it.',
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.white.withValues(alpha: 0.65),
+                color: PloyColors.fromWhiteAlpha(0.65),
                 height: 1.5,
               ),
         ),
@@ -206,7 +207,7 @@ class _InboxBody extends StatelessWidget {
           Text(
             data.loadError!,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.55),
+                  color: PloyColors.fromWhiteAlpha(0.55),
                 ),
           ),
         ],
@@ -341,14 +342,14 @@ class _PendingChangeCardState extends ConsumerState<_PendingChangeCard> {
           Text(
             change.typeLabel,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.95),
+                  color: PloyColors.fromWhiteAlpha(0.95),
                 ),
           ),
           const SizedBox(height: 4),
           Text(
             '$caregiverName · $when',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.55),
+                  color: PloyColors.fromWhiteAlpha(0.55),
                 ),
           ),
           const SizedBox(height: 16),
@@ -441,12 +442,12 @@ class _ValueBox extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: highlight
-              ? const Color(0x66B084D1)
-              : Colors.white.withValues(alpha: 0.12),
+              ? PloyColors.accent.withValues(alpha: 0.4)
+              : PloyColors.line,
         ),
         color: highlight
-            ? const Color(0x14B084D1)
-            : Colors.white.withValues(alpha: 0.04),
+            ? PloyColors.tint
+            : PloyColors.surface,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -456,8 +457,8 @@ class _ValueBox extends StatelessWidget {
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
                   letterSpacing: 1.1,
                   color: highlight
-                      ? const Color(0xFFB084D1)
-                      : Colors.white.withValues(alpha: 0.45),
+                      ? PloyColors.accent
+                      : PloyColors.muted,
                 ),
           ),
           const SizedBox(height: 6),
@@ -465,8 +466,8 @@ class _ValueBox extends StatelessWidget {
             value,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: muted
-                      ? Colors.white.withValues(alpha: 0.45)
-                      : Colors.white.withValues(alpha: 0.9),
+                      ? PloyColors.fromWhiteAlpha(0.45)
+                      : PloyColors.fromWhiteAlpha(0.9),
                   fontStyle: muted ? FontStyle.italic : FontStyle.normal,
                   height: 1.45,
                 ),

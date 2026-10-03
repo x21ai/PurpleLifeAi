@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'care_chat_repository.dart';
+import '../../design/ploy_colors.dart';
 
 /// Renders a persisted care-chat attachment: image thumbnail or file row.
 /// Fetches a short-lived signed URL (300s TTL) via the repository.
@@ -89,7 +90,7 @@ class _CareAttachmentViewState extends ConsumerState<CareAttachmentView> {
                 ? Container(
                     width: 160,
                     height: 120,
-                    color: Colors.white.withValues(alpha: 0.08),
+                    color: PloyColors.fromWhiteAlpha(0.08),
                     alignment: Alignment.center,
                     child: _loading
                         ? const SizedBox(
@@ -98,7 +99,7 @@ class _CareAttachmentViewState extends ConsumerState<CareAttachmentView> {
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         : Icon(Icons.broken_image_outlined,
-                            color: Colors.white.withValues(alpha: 0.5)),
+                            color: PloyColors.fromWhiteAlpha(0.5)),
                   )
                 : Image.network(
                     _url!,
@@ -106,10 +107,10 @@ class _CareAttachmentViewState extends ConsumerState<CareAttachmentView> {
                     errorBuilder: (_, __, ___) => Container(
                       width: 160,
                       height: 120,
-                      color: Colors.white.withValues(alpha: 0.08),
+                      color: PloyColors.fromWhiteAlpha(0.08),
                       alignment: Alignment.center,
                       child: Icon(Icons.broken_image_outlined,
-                          color: Colors.white.withValues(alpha: 0.5)),
+                          color: PloyColors.fromWhiteAlpha(0.5)),
                     ),
                   ),
           ),
@@ -120,14 +121,14 @@ class _CareAttachmentViewState extends ConsumerState<CareAttachmentView> {
     final sizeMb = (a.size / 1024 / 1024).toStringAsFixed(2);
     final fg = widget.mine
         ? Theme.of(context).colorScheme.onPrimary
-        : Colors.white.withValues(alpha: 0.92);
+        : PloyColors.fromWhiteAlpha(0.92);
     return InkWell(
       onTap: _open,
       borderRadius: BorderRadius.circular(10),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.06),
+          color: PloyColors.fromWhiteAlpha(0.06),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Row(

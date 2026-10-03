@@ -8,6 +8,7 @@ import 'design/tokens.dart';
 import 'features/account/theme_preference.dart';
 import 'features/tools/wearable_oauth.dart';
 import 'shell/router.dart';
+import 'design/ploy_colors.dart';
 
 /// Root widget: theme, router, and core service bootstrap.
 class PurpleApp extends ConsumerWidget {
@@ -31,11 +32,9 @@ class PurpleApp extends ConsumerWidget {
     return MaterialApp.router(
       title: 'Purple',
       debugShowCheckedModeBanner: false,
-      themeMode: appearance == PurpleThemeMode.system
-          ? ThemeMode.system
-          : appearance == PurpleThemeMode.light
-              ? ThemeMode.light
-              : ThemeMode.dark,
+      // Ploy ships one light look. Stored Dark or System preferences stay
+      // saved, and both themes below are that same light palette.
+      themeMode: ThemeMode.light,
       theme: lightTheme,
       darkTheme: darkTheme,
       routerConfig: router,
@@ -66,7 +65,7 @@ class PurpleApp extends ConsumerWidget {
                 child: Text(
                   message,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(color: Colors.white70),
+                  style: const TextStyle(color: PloyColors.muted),
                 ),
               ),
             ),

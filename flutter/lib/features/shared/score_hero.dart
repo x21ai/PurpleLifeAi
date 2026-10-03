@@ -4,6 +4,7 @@ import '../../design/purple_type.dart';
 
 import '../../design/tokens.dart';
 import 'merged_style.dart';
+import '../../design/ploy_colors.dart';
 
 /// Readiness band matching web `ScoreBand` / `bandForReadiness`.
 enum ScoreBand { excellent, good, fair, attention }
@@ -15,31 +16,32 @@ ScoreBand bandForScore(double score) {
   return ScoreBand.attention;
 }
 
+/// Soft Ploy washes (mint, blue, yellow, coral) on the light canvas.
 LinearGradient gradientForBand(ScoreBand band) {
   switch (band) {
     case ScoreBand.excellent:
       return const LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
-        colors: [Color(0xFF4A8B6F), Color(0xFF2C6450)],
+        colors: [Color(0xFFE5F8F1), PloyColors.surface],
       );
     case ScoreBand.good:
       return const LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
-        colors: [Color(0xFF4A6FA5), Color(0xFF2C4E7A)],
+        colors: [Color(0xFFE3F4FD), PloyColors.surface],
       );
     case ScoreBand.fair:
       return const LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
-        colors: [Color(0xFFC58A3F), Color(0xFF8B5E26)],
+        colors: [Color(0xFFFFF6E3), PloyColors.surface],
       );
     case ScoreBand.attention:
       return const LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
-        colors: [Color(0xFFB8453A), Color(0xFF7A2A22)],
+        colors: [Color(0xFFFFEEEB), PloyColors.surface],
       );
   }
 }
@@ -85,7 +87,10 @@ class ScoreHero extends StatelessWidget {
       borderRadius: BorderRadius.circular(radius),
       child: Container(
         constraints: BoxConstraints(minHeight: minHeight),
-        decoration: BoxDecoration(gradient: gradientForBand(resolvedBand)),
+        decoration: BoxDecoration(
+          gradient: gradientForBand(resolvedBand),
+          border: Border.all(color: PloyColors.line),
+        ),
         child: Stack(
           children: [
             Positioned.fill(
@@ -111,7 +116,7 @@ class ScoreHero extends StatelessWidget {
                       height: tokens.typography.lineHeight('numericDisplay'),
                       letterSpacing:
                           tokens.typography.letterSpacing('numericDisplay'),
-                      color: Colors.white,
+                      color: PloyColors.ink,
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -119,7 +124,7 @@ class ScoreHero extends StatelessWidget {
                     label.toUpperCase(),
                     style: medsEyebrow(
                       palette: mergedPalette(),
-                      color: Colors.white.withValues(alpha: 0.85),
+                      color: PloyColors.fromWhiteAlpha(0.85),
                     ),
                   ),
                   if (resolvedPhrase.isNotEmpty) ...[
@@ -130,7 +135,7 @@ class ScoreHero extends StatelessWidget {
                       style: PurpleType.serifStyle(
                         fontSize: phraseSize,
                         height: 1.2,
-                        color: Colors.white,
+                        color: PloyColors.ink,
                       ),
                     ),
                   ],
@@ -142,7 +147,7 @@ class ScoreHero extends StatelessWidget {
                         narrative!.trim(),
                         textAlign: TextAlign.center,
                         style: PurpleType.bodySerif(
-                          color: Colors.white.withValues(alpha: 0.9),
+                          color: PloyColors.fromWhiteAlpha(0.9),
                         ),
                       ),
                     ),
@@ -165,7 +170,7 @@ class _MountainSilhouettePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.white.withValues(alpha: opacity)
+      ..color = PloyColors.ink.withValues(alpha: opacity * 0.35)
       ..style = PaintingStyle.fill;
 
     final path = Path()

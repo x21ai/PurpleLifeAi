@@ -1,26 +1,24 @@
 import 'package:flutter/material.dart';
 
+import '../../design/ploy_colors.dart';
+
 /// Light access chrome from the live Ploy pilot
 /// (`ploy-staging` `.purplelife-pilot` tokens and `PrivacyShield`).
-///
-/// Hex values are the sRGB rendering of those oklch tokens. Auth and
-/// onboarding use this chrome. Signed-in product screens stay on the dark
-/// shell.
 class PloyAccessColors {
   PloyAccessColors._();
 
-  static const canvas = Color(0xFFF8F7FA);
-  static const surface = Color(0xFFFFFFFF);
-  static const rail = Color(0xFFF1EFF4);
-  static const tint = Color(0xFFF0E9FB);
-  static const line = Color(0xFFDDDBE1);
-  static const ink = Color(0xFF18161D);
-  static const muted = Color(0xFF67646F);
-  static const accent = Color(0xFF8E61CF);
-  static const pink = Color(0xFFF070BE);
-  static const coral = Color(0xFFFF7769);
-  static const blue = Color(0xFF009BF0);
-  static const shieldShadow = Color(0xFF6C59D6);
+  static const canvas = PloyColors.canvas;
+  static const surface = PloyColors.surface;
+  static const rail = PloyColors.rail;
+  static const tint = PloyColors.tint;
+  static const line = PloyColors.line;
+  static const ink = PloyColors.ink;
+  static const muted = PloyColors.muted;
+  static const accent = PloyColors.accent;
+  static const pink = PloyColors.pink;
+  static const coral = PloyColors.coral;
+  static const blue = PloyColors.blue;
+  static const shieldShadow = PloyColors.shieldShadow;
 }
 
 /// Soft layered shield from `PrivacyShield` in

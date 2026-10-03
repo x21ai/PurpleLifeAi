@@ -9,6 +9,7 @@ import '../shared/loading_skeleton.dart';
 import 'care_relationship_tile.dart';
 import 'care_repository.dart';
 import 'incoming_care_invites_card.dart';
+import '../../design/ploy_colors.dart';
 
 /// Care hub: people you care for and quick link to sharing settings.
 class CareIndexScreen extends ConsumerWidget {
@@ -74,7 +75,7 @@ class _CareIndexBody extends StatelessWidget {
           'CARE',
           style: Theme.of(context).textTheme.labelSmall?.copyWith(
                 letterSpacing: 1.2,
-                color: Colors.white.withValues(alpha: 0.45),
+                color: PloyColors.fromWhiteAlpha(0.45),
               ),
         ),
         const SizedBox(height: 8),
@@ -82,14 +83,14 @@ class _CareIndexBody extends StatelessWidget {
           'Care',
           style: Theme.of(context).textTheme.displaySmall?.copyWith(
                 height: 1.04,
-                color: Colors.white.withValues(alpha: 0.95),
+                color: PloyColors.fromWhiteAlpha(0.95),
               ),
         ),
         const SizedBox(height: 12),
         Text(
           'Manage who you care for and who cares for you.',
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.white.withValues(alpha: 0.65),
+                color: PloyColors.fromWhiteAlpha(0.65),
                 height: 1.5,
               ),
         ),
@@ -98,7 +99,7 @@ class _CareIndexBody extends StatelessWidget {
           Text(
             data.loadError!,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.55),
+                  color: PloyColors.fromWhiteAlpha(0.55),
                 ),
           ),
         ],
@@ -120,7 +121,7 @@ class _CareIndexBody extends StatelessWidget {
             'PENDING INVITES',
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
                   letterSpacing: 1.1,
-                  color: Colors.white.withValues(alpha: 0.45),
+                  color: PloyColors.fromWhiteAlpha(0.45),
                 ),
           ),
           const SizedBox(height: 8),
@@ -206,14 +207,14 @@ class _SectionHeader extends StatelessWidget {
         Text(
           title,
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                color: Colors.white.withValues(alpha: 0.95),
+                color: PloyColors.fromWhiteAlpha(0.95),
               ),
         ),
         const SizedBox(height: 4),
         Text(
           subtitle,
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Colors.white.withValues(alpha: 0.55),
+                color: PloyColors.fromWhiteAlpha(0.55),
               ),
         ),
       ],

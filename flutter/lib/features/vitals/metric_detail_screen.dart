@@ -10,6 +10,7 @@ import '../data/data_style.dart';
 import '../shared/glass_helpers.dart';
 import 'biometric_metrics.dart';
 import 'vitals_repository.dart';
+import '../../design/ploy_colors.dart';
 
 /// Legacy lightweight metric metadata kept for backward compatibility with
 /// `vitals_screen.dart` (Wave-1). New code should use [BiometricMetricMeta]
@@ -49,7 +50,7 @@ Color sourceColorFor(SourceKey source) {
       PurpleTokens.loaded.colorsFor('dark').purplePrimary,
     );
   }
-  return sourceColors[source] ?? Colors.white;
+  return sourceColors[source] ?? PloyColors.muted;
 }
 
 /// Warning tone color from tokens (for "Pay attention" badges/bands).
@@ -74,11 +75,11 @@ class StatusBadge extends StatelessWidget {
         bg = w.withValues(alpha: 0.15);
         fg = w;
       case StatusTone.good:
-        bg = Colors.white.withValues(alpha: 0.08);
-        fg = Colors.white.withValues(alpha: 0.85);
+        bg = PloyColors.fromWhiteAlpha(0.08);
+        fg = PloyColors.fromWhiteAlpha(0.85);
       case StatusTone.neutral:
-        bg = Colors.white.withValues(alpha: 0.06);
-        fg = Colors.white.withValues(alpha: 0.55);
+        bg = PloyColors.fromWhiteAlpha(0.06);
+        fg = PloyColors.fromWhiteAlpha(0.55);
     }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
@@ -178,7 +179,7 @@ class _MetricDetailScreenState extends ConsumerState<MetricDetailScreen> {
                     child: Text(
                       'Could not load this metric right now. Pull to refresh and try again.',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.7),
+                            color: PloyColors.fromWhiteAlpha(0.7),
                             height: 1.45,
                           ),
                     ),
@@ -592,18 +593,18 @@ class _MetricChart extends StatelessWidget {
         horizontalLines: [
           HorizontalLine(
             y: mean,
-            color: Colors.white.withValues(alpha: 0.25),
+            color: PloyColors.fromWhiteAlpha(0.25),
             strokeWidth: 1,
             dashArray: [4, 4],
           ),
           HorizontalLine(
             y: hi,
-            color: Colors.white.withValues(alpha: 0.12),
+            color: PloyColors.fromWhiteAlpha(0.12),
             strokeWidth: 1,
           ),
           HorizontalLine(
             y: lo,
-            color: Colors.white.withValues(alpha: 0.12),
+            color: PloyColors.fromWhiteAlpha(0.12),
             strokeWidth: 1,
           ),
         ],
@@ -662,7 +663,7 @@ class _MetricChart extends StatelessWidget {
                   child: Text(
                     label,
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.4),
+                      color: PloyColors.fromWhiteAlpha(0.4),
                       fontSize: 10,
                     ),
                   ),
@@ -707,7 +708,7 @@ class SourceLegend extends StatelessWidget {
               Text(
                 sourceLabels[s] ?? sourceKeyToString(s),
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.55),
+                      color: PloyColors.fromWhiteAlpha(0.55),
                     ),
               ),
             ],
@@ -788,7 +789,7 @@ class _Pill extends StatelessWidget {
     return Material(
       color: selected
           ? activeColor.withValues(alpha: 0.2)
-          : Colors.white.withValues(alpha: 0.06),
+          : PloyColors.fromWhiteAlpha(0.06),
       borderRadius: BorderRadius.circular(999),
       child: InkWell(
         onTap: onTap,
@@ -802,8 +803,8 @@ class _Pill extends StatelessWidget {
                 label,
                 style: Theme.of(context).textTheme.labelMedium?.copyWith(
                       color: selected
-                          ? Colors.white.withValues(alpha: 0.95)
-                          : Colors.white.withValues(alpha: 0.55),
+                          ? PloyColors.fromWhiteAlpha(0.95)
+                          : PloyColors.fromWhiteAlpha(0.55),
                       fontWeight:
                           selected ? FontWeight.w600 : FontWeight.w500,
                     ),
@@ -836,14 +837,14 @@ class _MetricNotFound extends StatelessWidget {
                 Text(
                   'Metric not found',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.95),
+                        color: PloyColors.fromWhiteAlpha(0.95),
                       ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'This signal is not available yet in Flutter.',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.7),
+                        color: PloyColors.fromWhiteAlpha(0.7),
                       ),
                 ),
                 const SizedBox(height: 16),

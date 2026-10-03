@@ -5,6 +5,7 @@ import '../../design/tokens.dart';
 import '../../shell/routes.dart';
 import '../shared/glass_helpers.dart';
 import 'synced_data_overview.dart';
+import '../../design/ploy_colors.dart';
 
 /// Which signed-in route is hosting the panel (highlights that chip).
 enum SyncedDataAnchor {
@@ -46,7 +47,7 @@ class SyncedDataPanel extends StatelessWidget {
               Icon(
                 Icons.sync,
                 size: 16,
-                color: Colors.white.withValues(alpha: 0.55),
+                color: PloyColors.fromWhiteAlpha(0.55),
               ),
               const SizedBox(width: 8),
               Expanded(
@@ -54,7 +55,7 @@ class SyncedDataPanel extends StatelessWidget {
                   'ALL SYNCED DATA (${overview.windowDays} DAYS)',
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
                         letterSpacing: 1.1,
-                        color: Colors.white.withValues(alpha: 0.45),
+                        color: PloyColors.fromWhiteAlpha(0.45),
                       ),
                 ),
               ),
@@ -68,7 +69,7 @@ class SyncedDataPanel extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(vertical: 6),
                 child: Divider(
                   height: 1,
-                  color: Colors.white.withValues(alpha: 0.06),
+                  color: PloyColors.fromWhiteAlpha(0.06),
                 ),
               ),
           ],
@@ -77,7 +78,7 @@ class SyncedDataPanel extends StatelessWidget {
             'EXPLORE YOUR DATA',
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
                   letterSpacing: 1.1,
-                  color: Colors.white.withValues(alpha: 0.4),
+                  color: PloyColors.fromWhiteAlpha(0.4),
                 ),
           ),
           const SizedBox(height: 8),
@@ -119,7 +120,7 @@ class SyncedDataCompactStrip extends StatelessWidget {
               Icon(
                 Icons.sync,
                 size: 16,
-                color: Colors.white.withValues(alpha: 0.55),
+                color: PloyColors.fromWhiteAlpha(0.55),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -128,7 +129,7 @@ class SyncedDataCompactStrip extends StatelessWidget {
                       ? 'Connected devices · tap for full breakdown'
                       : 'Synced last ${overview.windowDays} days · $summary',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.65),
+                        color: PloyColors.fromWhiteAlpha(0.65),
                         height: 1.35,
                       ),
                 ),
@@ -136,7 +137,7 @@ class SyncedDataCompactStrip extends StatelessWidget {
               Icon(
                 Icons.chevron_right,
                 size: 16,
-                color: Colors.white.withValues(alpha: 0.4),
+                color: PloyColors.fromWhiteAlpha(0.4),
               ),
             ],
           ),
@@ -173,7 +174,7 @@ class _SourceRow extends StatelessWidget {
               Text(
                 row.label,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.9),
+                      color: PloyColors.fromWhiteAlpha(0.9),
                       fontWeight: FontWeight.w600,
                     ),
               ),
@@ -181,7 +182,7 @@ class _SourceRow extends StatelessWidget {
               Text(
                 syncLabel,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.5),
+                      color: PloyColors.fromWhiteAlpha(0.5),
                       height: 1.3,
                     ),
               ),
@@ -198,7 +199,7 @@ class _SourceRow extends StatelessWidget {
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: row.hasReadings
                         ? purple
-                        : Colors.white.withValues(alpha: 0.35),
+                        : PloyColors.fromWhiteAlpha(0.35),
                     fontWeight: FontWeight.w600,
                   ),
             ),
@@ -206,7 +207,7 @@ class _SourceRow extends StatelessWidget {
               Text(
                 'of readings',
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.35),
+                      color: PloyColors.fromWhiteAlpha(0.35),
                     ),
               ),
           ],
@@ -273,17 +274,17 @@ class _LinkChip extends StatelessWidget {
       label: Text(label),
       labelStyle: Theme.of(context).textTheme.labelLarge?.copyWith(
             color: active
-                ? Colors.white.withValues(alpha: 0.95)
-                : Colors.white.withValues(alpha: 0.75),
+                ? PloyColors.fromWhiteAlpha(0.95)
+                : PloyColors.fromWhiteAlpha(0.75),
             fontWeight: active ? FontWeight.w600 : FontWeight.w500,
           ),
       backgroundColor: active
           ? purple.withValues(alpha: 0.22)
-          : Colors.white.withValues(alpha: 0.06),
+          : PloyColors.fromWhiteAlpha(0.06),
       side: BorderSide(
         color: active
             ? purple.withValues(alpha: 0.45)
-            : Colors.white.withValues(alpha: 0.1),
+            : PloyColors.fromWhiteAlpha(0.1),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 4),
       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -308,14 +309,14 @@ class _EmptySyncedPrompt extends StatelessWidget {
             'ALL SYNCED DATA',
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
                   letterSpacing: 1.1,
-                  color: Colors.white.withValues(alpha: 0.45),
+                  color: PloyColors.fromWhiteAlpha(0.45),
                 ),
           ),
           const SizedBox(height: 8),
           Text(
             'Connect Oura, Whoop, or Apple Health in Tools. Your readings show up here once synced.',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.6),
+                  color: PloyColors.fromWhiteAlpha(0.6),
                   height: 1.4,
                 ),
           ),

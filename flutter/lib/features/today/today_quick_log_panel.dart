@@ -12,6 +12,7 @@ import '../journal/journal_media_capture.dart';
 import '../journal/journal_media_file.dart';
 import '../journal/journal_repository.dart';
 import '../seizures/seizure_repository.dart';
+import '../../design/ploy_colors.dart';
 
 /// Kind chips in Merged Today Quick log (preview Aura / Seizure / Other).
 enum TodayQuickLogKind { aura, seizure, other }
@@ -237,7 +238,7 @@ class _TodayLogExpandBodyState extends ConsumerState<TodayLogExpandBody> {
   Future<void> _showVideoSheet() async {
     await showModalBottomSheet<void>(
       context: context,
-      backgroundColor: const Color(0xFF1A1520),
+      backgroundColor: PloyColors.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -247,11 +248,11 @@ class _TodayLogExpandBodyState extends ConsumerState<TodayLogExpandBody> {
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
-                leading: const Icon(Icons.videocam_outlined, color: Colors.white),
-                title: const Text('Record video', style: TextStyle(color: Colors.white)),
+                leading: const Icon(Icons.videocam_outlined, color: PloyColors.ink),
+                title: const Text('Record video', style: TextStyle(color: PloyColors.ink)),
                 subtitle: Text(
                   'Up to 60 seconds',
-                  style: TextStyle(color: Colors.white.withValues(alpha: 0.6)),
+                  style: TextStyle(color: PloyColors.fromWhiteAlpha(0.6)),
                 ),
                 onTap: () {
                   Navigator.pop(sheetContext);
@@ -259,14 +260,14 @@ class _TodayLogExpandBodyState extends ConsumerState<TodayLogExpandBody> {
                 },
               ),
               ListTile(
-                leading: const Icon(Icons.video_library_outlined, color: Colors.white),
+                leading: const Icon(Icons.video_library_outlined, color: PloyColors.ink),
                 title: const Text(
                   'Choose from library',
-                  style: TextStyle(color: Colors.white),
+                  style: TextStyle(color: PloyColors.ink),
                 ),
                 subtitle: Text(
                   'Max 50 MB',
-                  style: TextStyle(color: Colors.white.withValues(alpha: 0.6)),
+                  style: TextStyle(color: PloyColors.fromWhiteAlpha(0.6)),
                 ),
                 onTap: () {
                   Navigator.pop(sheetContext);
@@ -300,7 +301,7 @@ class _TodayLogExpandBodyState extends ConsumerState<TodayLogExpandBody> {
 
   @override
   Widget build(BuildContext context) {
-    final muted = Colors.white.withValues(alpha: 0.65);
+    final muted = PloyColors.fromWhiteAlpha(0.65);
     final whenLabel = DateFormat('MMM d · h:mm a').format(_when);
 
     return Column(
@@ -344,7 +345,7 @@ class _TodayLogExpandBodyState extends ConsumerState<TodayLogExpandBody> {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: Colors.white.withValues(alpha: 0.45),
+                color: PloyColors.fromWhiteAlpha(0.45),
               ),
             ),
             const SizedBox(width: 12),
@@ -352,9 +353,9 @@ class _TodayLogExpandBodyState extends ConsumerState<TodayLogExpandBody> {
               child: OutlinedButton(
                 onPressed: _saving ? null : _pickWhen,
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.white.withValues(alpha: 0.85),
+                  foregroundColor: PloyColors.fromWhiteAlpha(0.85),
                   side: BorderSide(
-                    color: Colors.white.withValues(alpha: 0.18),
+                    color: PloyColors.fromWhiteAlpha(0.18),
                   ),
                   minimumSize: const Size(0, 44),
                 ),
@@ -373,29 +374,29 @@ class _TodayLogExpandBodyState extends ConsumerState<TodayLogExpandBody> {
           minLines: 2,
           maxLines: 4,
           maxLength: 500,
-          style: const TextStyle(color: Colors.white, fontSize: 14),
+          style: const TextStyle(color: PloyColors.ink, fontSize: 14),
           decoration: InputDecoration(
             hintText: 'What happened? Type here, or tap voice or video.',
-            hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.35)),
+            hintStyle: TextStyle(color: PloyColors.fromWhiteAlpha(0.35)),
             counterText: '',
             filled: true,
-            fillColor: Colors.white.withValues(alpha: 0.06),
+            fillColor: PloyColors.fromWhiteAlpha(0.06),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
               borderSide: BorderSide(
-                color: Colors.white.withValues(alpha: 0.12),
+                color: PloyColors.fromWhiteAlpha(0.12),
               ),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
               borderSide: BorderSide(
-                color: Colors.white.withValues(alpha: 0.12),
+                color: PloyColors.fromWhiteAlpha(0.12),
               ),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
               borderSide: BorderSide(
-                color: Colors.white.withValues(alpha: 0.35),
+                color: PloyColors.fromWhiteAlpha(0.35),
               ),
             ),
           ),
@@ -416,10 +417,10 @@ class _TodayLogExpandBodyState extends ConsumerState<TodayLogExpandBody> {
                   onDeleted: _saving
                       ? null
                       : () => setState(() => _media.removeAt(i)),
-                  deleteIconColor: Colors.white.withValues(alpha: 0.8),
-                  labelStyle: const TextStyle(color: Colors.white, fontSize: 12),
-                  backgroundColor: Colors.white.withValues(alpha: 0.08),
-                  side: BorderSide(color: Colors.white.withValues(alpha: 0.16)),
+                  deleteIconColor: PloyColors.fromWhiteAlpha(0.8),
+                  labelStyle: const TextStyle(color: PloyColors.ink, fontSize: 12),
+                  backgroundColor: PloyColors.fromWhiteAlpha(0.08),
+                  side: BorderSide(color: PloyColors.fromWhiteAlpha(0.16)),
                 ),
             ],
           ),
@@ -498,7 +499,7 @@ class _ComposeToolButton extends StatelessWidget {
         button: true,
         label: tooltip,
         child: Material(
-          color: Colors.white.withValues(alpha: 0.06),
+          color: PloyColors.fromWhiteAlpha(0.06),
           borderRadius: BorderRadius.circular(8),
           child: InkWell(
             onTap: onTap,
@@ -509,7 +510,7 @@ class _ComposeToolButton extends StatelessWidget {
               child: Icon(
                 icon,
                 size: 18,
-                color: Colors.white.withValues(alpha: 0.8),
+                color: PloyColors.fromWhiteAlpha(0.8),
               ),
             ),
           ),
@@ -537,17 +538,17 @@ class _KindChip extends StatelessWidget {
       selected: selected,
       onSelected: (_) => onTap(),
       showCheckmark: false,
-      selectedColor: const Color(0xFFB084D1).withValues(alpha: 0.28),
-      backgroundColor: Colors.white.withValues(alpha: 0.06),
+      selectedColor: PloyColors.tint,
+      backgroundColor: PloyColors.fromWhiteAlpha(0.06),
       labelStyle: TextStyle(
-        color: Colors.white.withValues(alpha: selected ? 0.95 : 0.7),
+        color: selected ? PloyColors.accent : PloyColors.ink,
         fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
         fontSize: 13,
       ),
       side: BorderSide(
         color: selected
-            ? const Color(0xFFB084D1).withValues(alpha: 0.55)
-            : Colors.white.withValues(alpha: 0.12),
+            ? PloyColors.accent
+            : PloyColors.fromWhiteAlpha(0.12),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,

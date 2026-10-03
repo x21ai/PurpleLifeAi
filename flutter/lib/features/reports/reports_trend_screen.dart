@@ -11,6 +11,7 @@ import '../shared/loading_skeleton.dart';
 import 'models/report_row.dart';
 import 'reports_repository.dart';
 import 'widgets/trend_chart.dart';
+import '../../design/ploy_colors.dart';
 
 /// Metric trend detail mirroring web `/reports/trends/$metricKey`.
 class ReportsTrendScreen extends ConsumerWidget {
@@ -33,11 +34,11 @@ class ReportsTrendScreen extends ConsumerWidget {
                 onPressed: () => context.go(AppRoutes.reportsMetrics),
                 icon: Icon(
                   Icons.arrow_back,
-                  color: Colors.white.withValues(alpha: 0.55),
+                  color: PloyColors.fromWhiteAlpha(0.55),
                 ),
                 label: Text(
                   'Metrics',
-                  style: TextStyle(color: Colors.white.withValues(alpha: 0.55)),
+                  style: TextStyle(color: PloyColors.fromWhiteAlpha(0.55)),
                 ),
               ),
               const SizedBox(height: 16),
@@ -45,7 +46,7 @@ class ReportsTrendScreen extends ConsumerWidget {
                 metricKey.replaceAll('_', ' ').toUpperCase(),
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
                       letterSpacing: 1.2,
-                      color: Colors.white.withValues(alpha: 0.45),
+                      color: PloyColors.fromWhiteAlpha(0.45),
                     ),
               ),
               const SizedBox(height: 8),
@@ -53,7 +54,7 @@ class ReportsTrendScreen extends ConsumerWidget {
                 _titleCase(metricKey.replaceAll('_', ' ')),
                 style: Theme.of(context).textTheme.displaySmall?.copyWith(
                       height: 1.02,
-                      color: Colors.white.withValues(alpha: 0.95),
+                      color: PloyColors.fromWhiteAlpha(0.95),
                     ),
               ),
               const SizedBox(height: 24),
@@ -138,7 +139,7 @@ class _TrendBody extends StatelessWidget {
             child: Text(
               'Upload another report with this metric to unlock a trend chart.',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.65),
+                    color: PloyColors.fromWhiteAlpha(0.65),
                     height: 1.45,
                   ),
             ),
@@ -163,7 +164,7 @@ class _TrendBody extends StatelessWidget {
                     child: Text(
                       'Shaded band = reference range ${latest.referenceLow}–${latest.referenceHigh}${unit != null ? ' $unit' : ''}',
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.45),
+                            color: PloyColors.fromWhiteAlpha(0.45),
                           ),
                     ),
                   ),
@@ -175,7 +176,7 @@ class _TrendBody extends StatelessWidget {
         Text(
           'Readings',
           style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                color: Colors.white.withValues(alpha: 0.95),
+                color: PloyColors.fromWhiteAlpha(0.95),
               ),
         ),
         const SizedBox(height: 12),
@@ -194,7 +195,7 @@ class _TrendBody extends StatelessWidget {
                         Text(
                           row.valueLabel,
                           style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                color: Colors.white.withValues(alpha: 0.95),
+                                color: PloyColors.fromWhiteAlpha(0.95),
                               ),
                         ),
                         Text(
@@ -204,7 +205,7 @@ class _TrendBody extends StatelessWidget {
                               row.reportTitle!.trim(),
                           ].join(' · '),
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: Colors.white.withValues(alpha: 0.55),
+                                color: PloyColors.fromWhiteAlpha(0.55),
                               ),
                         ),
                       ],
@@ -221,7 +222,7 @@ class _TrendBody extends StatelessWidget {
                     ),
                   Icon(
                     Icons.chevron_right,
-                    color: Colors.white.withValues(alpha: 0.4),
+                    color: PloyColors.fromWhiteAlpha(0.4),
                   ),
                 ],
               ),
@@ -249,8 +250,8 @@ class _StatChip extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
-        color: Colors.white.withValues(alpha: 0.05),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        color: PloyColors.fromWhiteAlpha(0.05),
+        border: Border.all(color: PloyColors.fromWhiteAlpha(0.08)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -259,14 +260,14 @@ class _StatChip extends StatelessWidget {
             label.toUpperCase(),
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
                   letterSpacing: 1.1,
-                  color: Colors.white.withValues(alpha: 0.45),
+                  color: PloyColors.fromWhiteAlpha(0.45),
                 ),
           ),
           const SizedBox(height: 4),
           Text(
             value,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.95),
+                  color: PloyColors.fromWhiteAlpha(0.95),
                 ),
           ),
         ],

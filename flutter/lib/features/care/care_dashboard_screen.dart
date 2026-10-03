@@ -11,6 +11,7 @@ import '../shared/loading_skeleton.dart';
 import '../chat/care_chat_repository.dart';
 import 'care_repository.dart';
 import 'care_scopes.dart';
+import '../../design/ploy_colors.dart';
 
 /// Caregiver dashboard with unified glass tab toolbar and scoped tab panels.
 class CareDashboardScreen extends ConsumerStatefulWidget {
@@ -116,10 +117,10 @@ class _DashboardBody extends ConsumerWidget {
             children: [
               TextButton.icon(
                 onPressed: () => context.go('/care'),
-                icon: Icon(Icons.arrow_back, color: Colors.white.withValues(alpha: 0.55)),
+                icon: Icon(Icons.arrow_back, color: PloyColors.fromWhiteAlpha(0.55)),
                 label: Text(
                   'All people',
-                  style: TextStyle(color: Colors.white.withValues(alpha: 0.55)),
+                  style: TextStyle(color: PloyColors.fromWhiteAlpha(0.55)),
                 ),
               ),
               const SizedBox(height: 16),
@@ -127,7 +128,7 @@ class _DashboardBody extends ConsumerWidget {
                 'CAREGIVER',
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
                       letterSpacing: 1.2,
-                      color: Colors.white.withValues(alpha: 0.45),
+                      color: PloyColors.fromWhiteAlpha(0.45),
                     ),
               ),
               const SizedBox(height: 8),
@@ -135,7 +136,7 @@ class _DashboardBody extends ConsumerWidget {
                 overview.dashboardTitle(),
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       height: 1.04,
-                      color: Colors.white.withValues(alpha: 0.95),
+                      color: PloyColors.fromWhiteAlpha(0.95),
                     ),
               ),
               const SizedBox(height: 12),
@@ -154,21 +155,21 @@ class _DashboardBody extends ConsumerWidget {
                   Text(
                     '${overview.scopes.length} scope${overview.scopes.length == 1 ? '' : 's'} granted',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.white.withValues(alpha: 0.5),
+                          color: PloyColors.fromWhiteAlpha(0.5),
                         ),
                   ),
                   if (overview.expiresAt != null)
                     Text(
                       'Access until ${overview.expiresAt!.split('T').first}',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.5),
+                            color: PloyColors.fromWhiteAlpha(0.5),
                           ),
                     ),
                   if (overview.isFromCache)
                     Text(
                       'Cached',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.45),
+                            color: PloyColors.fromWhiteAlpha(0.45),
                           ),
                     ),
                 ],
@@ -183,14 +184,14 @@ class _DashboardBody extends ConsumerWidget {
                         'CONTACT',
                         style: Theme.of(context).textTheme.labelSmall?.copyWith(
                               letterSpacing: 1.1,
-                              color: Colors.white.withValues(alpha: 0.45),
+                              color: PloyColors.fromWhiteAlpha(0.45),
                             ),
                       ),
                       const SizedBox(height: 8),
                       Text(
                         overview.phone!.trim(),
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Colors.white.withValues(alpha: 0.9),
+                              color: PloyColors.fromWhiteAlpha(0.9),
                             ),
                       ),
                     ],
@@ -301,7 +302,7 @@ class _MobileTabPicker extends StatelessWidget {
         value: current,
         isExpanded: true,
         dropdownColor: PurpleColors.backgroundTertiary,
-        style: TextStyle(color: Colors.white.withValues(alpha: 0.9)),
+        style: TextStyle(color: PloyColors.fromWhiteAlpha(0.9)),
         items: [
           for (final tab in tabs)
             DropdownMenuItem(
@@ -372,7 +373,7 @@ class _TabChip extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           decoration: BoxDecoration(
             color: selected
-                ? Colors.white.withValues(alpha: 0.1)
+                ? PloyColors.fromWhiteAlpha(0.1)
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(14),
           ),
@@ -382,8 +383,8 @@ class _TabChip extends StatelessWidget {
               fontSize: 14,
               fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
               color: selected
-                  ? Colors.white.withValues(alpha: 0.95)
-                  : Colors.white.withValues(alpha: 0.65),
+                  ? PloyColors.fromWhiteAlpha(0.95)
+                  : PloyColors.fromWhiteAlpha(0.65),
             ),
           ),
         ),
@@ -422,7 +423,7 @@ class _ToolbarActions extends StatelessWidget {
             icon: Icon(
               Icons.visibility_off_outlined,
               size: 18,
-              color: Colors.white.withValues(alpha: 0.65),
+              color: PloyColors.fromWhiteAlpha(0.65),
             ),
             color: PurpleColors.backgroundTertiary,
             onSelected: (value) async {
@@ -461,7 +462,7 @@ class _ToolbarActions extends StatelessWidget {
             Container(
               width: 1,
               height: 20,
-              color: Colors.white.withValues(alpha: 0.12),
+              color: PloyColors.fromWhiteAlpha(0.12),
             ),
             IconButton(
               onPressed: () {
@@ -479,7 +480,7 @@ class _ToolbarActions extends StatelessWidget {
                 );
               },
               icon: const Icon(Icons.add, size: 20),
-              color: Colors.white.withValues(alpha: 0.8),
+              color: PloyColors.fromWhiteAlpha(0.8),
               tooltip: 'Add biometric',
             ),
           ],
@@ -606,7 +607,7 @@ class _BiometricsTab extends ConsumerWidget {
                 child: Text(
                   'Showing cached biometrics',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.5),
+                        color: PloyColors.fromWhiteAlpha(0.5),
                       ),
                 ),
               ),
@@ -614,7 +615,7 @@ class _BiometricsTab extends ConsumerWidget {
               'Last 30 days',
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
                     letterSpacing: 1.1,
-                    color: Colors.white.withValues(alpha: 0.45),
+                    color: PloyColors.fromWhiteAlpha(0.45),
                   ),
             ),
             const SizedBox(height: 12),
@@ -686,7 +687,7 @@ class _BiometricMetricCard extends StatelessWidget {
           Text(
             metric.label,
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.6),
+                  color: PloyColors.fromWhiteAlpha(0.6),
                 ),
           ),
           const Spacer(),
@@ -695,7 +696,7 @@ class _BiometricMetricCard extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.95),
+                  color: PloyColors.fromWhiteAlpha(0.95),
                 ),
           ),
           const SizedBox(height: 4),
@@ -703,21 +704,21 @@ class _BiometricMetricCard extends StatelessWidget {
             Text(
               'Range ${_fmt(min)}–${_fmt(max)}',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.5),
+                    color: PloyColors.fromWhiteAlpha(0.5),
                   ),
             )
           else if (latestDate != null)
             Text(
               latestDate,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.5),
+                    color: PloyColors.fromWhiteAlpha(0.5),
                   ),
             )
           else
             Text(
               'No readings',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.4),
+                    color: PloyColors.fromWhiteAlpha(0.4),
                   ),
             ),
         ],
@@ -774,14 +775,14 @@ class _TodayTab extends ConsumerWidget {
                       'RISK FORECAST',
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
                             letterSpacing: 1.1,
-                            color: Colors.white.withValues(alpha: 0.45),
+                            color: PloyColors.fromWhiteAlpha(0.45),
                           ),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       '${forecast['band'] ?? 'Unknown'} risk',
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.95),
+                            color: PloyColors.fromWhiteAlpha(0.95),
                           ),
                     ),
                     if (forecast['risk_score'] != null) ...[
@@ -789,7 +790,7 @@ class _TodayTab extends ConsumerWidget {
                       Text(
                         'Score ${forecast['risk_score']}',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Colors.white.withValues(alpha: 0.55),
+                              color: PloyColors.fromWhiteAlpha(0.55),
                             ),
                       ),
                     ],
@@ -801,7 +802,7 @@ class _TodayTab extends ConsumerWidget {
                       Text(
                         (forecast['ai_narrative'] as String).trim(),
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Colors.white.withValues(alpha: 0.8),
+                              color: PloyColors.fromWhiteAlpha(0.8),
                             ),
                       ),
                     ],
@@ -819,7 +820,7 @@ class _TodayTab extends ConsumerWidget {
               'ALERTS',
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
                     letterSpacing: 1.1,
-                    color: Colors.white.withValues(alpha: 0.45),
+                    color: PloyColors.fromWhiteAlpha(0.45),
                   ),
             ),
             const SizedBox(height: 8),
@@ -827,7 +828,7 @@ class _TodayTab extends ConsumerWidget {
               Text(
                 'No active alerts.',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.5),
+                      color: PloyColors.fromWhiteAlpha(0.5),
                     ),
               )
             else
@@ -842,7 +843,7 @@ class _TodayTab extends ConsumerWidget {
                         Text(
                           (alert['title'] as String?) ?? (alert['kind'] as String? ?? 'Alert'),
                           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: Colors.white.withValues(alpha: 0.9),
+                                color: PloyColors.fromWhiteAlpha(0.9),
                                 fontWeight: FontWeight.w600,
                               ),
                         ),
@@ -852,7 +853,7 @@ class _TodayTab extends ConsumerWidget {
                           Text(
                             (alert['body'] as String).trim(),
                             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: Colors.white.withValues(alpha: 0.6),
+                                  color: PloyColors.fromWhiteAlpha(0.6),
                                 ),
                           ),
                         ],
@@ -919,7 +920,7 @@ class _MedsTab extends ConsumerWidget {
                       Text(
                         (med['name'] as String?) ?? 'Medication',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Colors.white.withValues(alpha: 0.92),
+                              color: PloyColors.fromWhiteAlpha(0.92),
                               fontWeight: FontWeight.w600,
                             ),
                       ),
@@ -927,7 +928,7 @@ class _MedsTab extends ConsumerWidget {
                         Text(
                           med['dosage'] as String,
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: Colors.white.withValues(alpha: 0.55),
+                                color: PloyColors.fromWhiteAlpha(0.55),
                               ),
                         ),
                       if (recentDoses.isNotEmpty) ...[
@@ -1005,7 +1006,7 @@ class _JournalTab extends ConsumerWidget {
                       Text(
                         ((entry['captured_at'] as String?) ?? '').split('T').first,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Colors.white.withValues(alpha: 0.45),
+                              color: PloyColors.fromWhiteAlpha(0.45),
                             ),
                       ),
                       const SizedBox(height: 4),
@@ -1016,7 +1017,7 @@ class _JournalTab extends ConsumerWidget {
                         maxLines: 4,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Colors.white.withValues(alpha: 0.85),
+                              color: PloyColors.fromWhiteAlpha(0.85),
                             ),
                       ),
                     ],
@@ -1084,7 +1085,7 @@ class _SeizuresTab extends ConsumerWidget {
                                   .split('.')
                                   .first,
                               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    color: Colors.white.withValues(alpha: 0.9),
+                                    color: PloyColors.fromWhiteAlpha(0.9),
                                     fontWeight: FontWeight.w600,
                                   ),
                             ),
@@ -1098,7 +1099,7 @@ class _SeizuresTab extends ConsumerWidget {
                         Text(
                           'Duration ${event['duration_seconds']}s',
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: Colors.white.withValues(alpha: 0.55),
+                                color: PloyColors.fromWhiteAlpha(0.55),
                               ),
                         ),
                       ],
@@ -1109,7 +1110,7 @@ class _SeizuresTab extends ConsumerWidget {
                           maxLines: 3,
                           overflow: TextOverflow.ellipsis,
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: Colors.white.withValues(alpha: 0.65),
+                                color: PloyColors.fromWhiteAlpha(0.65),
                               ),
                         ),
                       ],
@@ -1181,7 +1182,7 @@ class _ReportsTab extends ConsumerWidget {
                                   (report['report_type'] as String?) ??
                                   'Report',
                               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    color: Colors.white.withValues(alpha: 0.9),
+                                    color: PloyColors.fromWhiteAlpha(0.9),
                                     fontWeight: FontWeight.w600,
                                   ),
                             ),
@@ -1192,7 +1193,7 @@ class _ReportsTab extends ConsumerWidget {
                                       .split('T')
                                       .first,
                               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: Colors.white.withValues(alpha: 0.5),
+                                    color: PloyColors.fromWhiteAlpha(0.5),
                                   ),
                             ),
                           ],
@@ -1200,7 +1201,7 @@ class _ReportsTab extends ConsumerWidget {
                       ),
                       Icon(
                         Icons.chevron_right,
-                        color: Colors.white.withValues(alpha: 0.4),
+                        color: PloyColors.fromWhiteAlpha(0.4),
                       ),
                     ],
                   ),
@@ -1224,7 +1225,7 @@ class _CachedBanner extends StatelessWidget {
       child: Text(
         'Showing cached data',
         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Colors.white.withValues(alpha: 0.5),
+              color: PloyColors.fromWhiteAlpha(0.5),
             ),
       ),
     );
@@ -1300,14 +1301,14 @@ class _ChatTabState extends ConsumerState<_ChatTab> {
           'DIRECT CHAT',
           style: Theme.of(context).textTheme.labelSmall?.copyWith(
                 letterSpacing: 1.1,
-                color: Colors.white.withValues(alpha: 0.45),
+                color: PloyColors.fromWhiteAlpha(0.45),
               ),
         ),
         const SizedBox(height: 8),
         Text(
           'Send a private message to ${widget.ownerName}. Saved like WhatsApp, full history is kept.',
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.white.withValues(alpha: 0.65),
+                color: PloyColors.fromWhiteAlpha(0.65),
                 height: 1.5,
               ),
         ),
@@ -1328,7 +1329,7 @@ class _ChatTabState extends ConsumerState<_ChatTab> {
               Text(
                 _error!,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.65),
+                      color: PloyColors.fromWhiteAlpha(0.65),
                       height: 1.4,
                     ),
               ),
@@ -1410,24 +1411,24 @@ class _NoAccessView extends StatelessWidget {
       children: [
         TextButton.icon(
           onPressed: onBack,
-          icon: Icon(Icons.arrow_back, color: Colors.white.withValues(alpha: 0.55)),
+          icon: Icon(Icons.arrow_back, color: PloyColors.fromWhiteAlpha(0.55)),
           label: Text(
             'Back',
-            style: TextStyle(color: Colors.white.withValues(alpha: 0.55)),
+            style: TextStyle(color: PloyColors.fromWhiteAlpha(0.55)),
           ),
         ),
         const SizedBox(height: 24),
         Text(
           'No access',
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                color: Colors.white.withValues(alpha: 0.95),
+                color: PloyColors.fromWhiteAlpha(0.95),
               ),
         ),
         const SizedBox(height: 12),
         Text(
           message,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.white.withValues(alpha: 0.65),
+                color: PloyColors.fromWhiteAlpha(0.65),
               ),
         ),
       ],
@@ -1445,13 +1446,13 @@ class _Badge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
+        color: PloyColors.fromWhiteAlpha(0.1),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
         label,
         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Colors.white.withValues(alpha: 0.85),
+              color: PloyColors.fromWhiteAlpha(0.85),
             ),
       ),
     );
@@ -1468,13 +1469,13 @@ class _OutlineBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.white.withValues(alpha: 0.16)),
+        border: Border.all(color: PloyColors.fromWhiteAlpha(0.16)),
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
         label,
         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Colors.white.withValues(alpha: 0.75),
+              color: PloyColors.fromWhiteAlpha(0.75),
             ),
       ),
     );

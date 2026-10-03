@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 
+import 'ploy_colors.dart';
 import 'tokens.dart';
 import 'purple_type.dart';
 
-/// Canonical dark canvas from React `.auth-canvas` / app shell.
-const Color purpleCanvasDark = Color(0xFF0A0710);
+/// App canvas. Value is the live Ploy canvas (`--purplelife-canvas`).
+const Color purpleCanvasDark = PloyColors.canvas;
 
-/// Foreground on dark canvas (`--foreground` / `textPrimary`).
-const Color purpleForegroundDark = Color(0xFFFAFAFC);
+/// Foreground on the app canvas (`--purplelife-ink`).
+const Color purpleForegroundDark = PloyColors.ink;
 
 /// Dark-default [ThemeData] mapped from [design/tokens.json].
 class PurpleTheme {
@@ -339,10 +340,10 @@ class PurpleTheme {
   }
 }
 
-/// Builds the production dark theme from loaded [design/tokens.json] values.
+/// Production theme. Both appearances use the live Ploy light palette.
 ThemeData buildPurpleDarkTheme({PurpleTokens? tokens}) {
   return PurpleTheme._build(
-    appearance: 'dark',
+    appearance: 'light',
     tokens: tokens ?? PurpleTokens.loaded,
   );
 }

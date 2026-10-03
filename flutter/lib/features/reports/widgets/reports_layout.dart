@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../shell/routes.dart';
 import '../../shared/glass_helpers.dart';
+import '../../../design/ploy_colors.dart';
 
 enum ReportsTab { metrics, documents }
 
@@ -33,11 +34,11 @@ class ReportsLayout extends StatelessWidget {
                   onPressed: () => context.go(AppRoutes.settings),
                   icon: Icon(
                     Icons.arrow_back,
-                    color: Colors.white.withValues(alpha: 0.55),
+                    color: PloyColors.fromWhiteAlpha(0.55),
                   ),
                   label: Text(
                     'Settings',
-                    style: TextStyle(color: Colors.white.withValues(alpha: 0.55)),
+                    style: TextStyle(color: PloyColors.fromWhiteAlpha(0.55)),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -45,7 +46,7 @@ class ReportsLayout extends StatelessWidget {
                   'REPORTS',
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
                         letterSpacing: 1.2,
-                        color: Colors.white.withValues(alpha: 0.45),
+                        color: PloyColors.fromWhiteAlpha(0.45),
                       ),
                 ),
                 const SizedBox(height: 8),
@@ -53,14 +54,14 @@ class ReportsLayout extends StatelessWidget {
                   'Labs and\nreports',
                   style: Theme.of(context).textTheme.displaySmall?.copyWith(
                         height: 1.02,
-                        color: Colors.white.withValues(alpha: 0.95),
+                        color: PloyColors.fromWhiteAlpha(0.95),
                       ),
                 ),
                 const SizedBox(height: 12),
                 Text(
                   'Uploaded lab PDFs and extracted metrics. Educational only, not medical advice.',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.65),
+                        color: PloyColors.fromWhiteAlpha(0.65),
                         height: 1.5,
                       ),
                 ),
@@ -73,7 +74,7 @@ class ReportsLayout extends StatelessWidget {
                     child: Text(
                       'Medical history PDFs',
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.65),
+                        color: PloyColors.fromWhiteAlpha(0.65),
                         decoration: TextDecoration.underline,
                       ),
                     ),
@@ -133,7 +134,7 @@ class _TabChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: selected
-          ? Colors.white.withValues(alpha: 0.14)
+          ? PloyColors.fromWhiteAlpha(0.14)
           : Colors.transparent,
       borderRadius: BorderRadius.circular(999),
       child: InkWell(
@@ -145,8 +146,8 @@ class _TabChip extends StatelessWidget {
             label,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: selected
-                      ? Colors.white.withValues(alpha: 0.95)
-                      : Colors.white.withValues(alpha: 0.65),
+                      ? PloyColors.fromWhiteAlpha(0.95)
+                      : PloyColors.fromWhiteAlpha(0.65),
                   fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
                 ),
           ),

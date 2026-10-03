@@ -23,6 +23,7 @@ import 'today_merged_widgets.dart';
 import 'today_quick_log_panel.dart';
 import 'today_repository.dart';
 import 'wearable_sync.dart';
+import '../../design/ploy_colors.dart';
 
 /// Merged Today dashboard matching `personalized-dashboard-preview.html`
 /// layout=merged: greeting → date strip → score tiles → signals → narrative →
@@ -298,7 +299,7 @@ class _MergedTodayBody extends StatelessWidget {
             fontSize: tokens.typography.labelSize('labelEyebrow'),
             letterSpacing: tokens.typography.letterSpacing('labelEyebrow'),
             fontWeight: FontWeight.w600,
-            color: Colors.white.withValues(alpha: 0.45),
+            color: PloyColors.fromWhiteAlpha(0.45),
           ),
         ),
         SizedBox(height: tokens.spacing.sm),
@@ -312,7 +313,7 @@ class _MergedTodayBody extends StatelessWidget {
           Text(
             'Here\'s how ${DateFormat('EEEE, MMMM d').format(selectedDate)} went.',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.55),
+                  color: PloyColors.fromWhiteAlpha(0.55),
                   height: 1.45,
                 ),
           ),
@@ -321,7 +322,7 @@ class _MergedTodayBody extends StatelessWidget {
           Text(
             promptForConditions(data.conditions),
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.55),
+                  color: PloyColors.fromWhiteAlpha(0.55),
                   height: 1.45,
                 ),
           ),
@@ -381,7 +382,7 @@ class _MergedTodayBody extends StatelessWidget {
               trailing: TextButton(
                 onPressed: () => context.go(AppRoutes.hydration),
                 style: TextButton.styleFrom(
-                  foregroundColor: Colors.white.withValues(alpha: 0.55),
+                  foregroundColor: PloyColors.fromWhiteAlpha(0.55),
                   padding: const EdgeInsets.symmetric(horizontal: 8),
                   minimumSize: Size(
                     tokens.touch.minTarget,
@@ -448,7 +449,7 @@ class _MergedTodayBody extends StatelessWidget {
           child: TextButton.icon(
             onPressed: () => context.go(AppRoutes.plan),
             style: TextButton.styleFrom(
-              foregroundColor: Colors.white.withValues(alpha: 0.45),
+              foregroundColor: PloyColors.fromWhiteAlpha(0.45),
             ),
             icon: const Icon(Icons.checklist, size: 14),
             label: const Text('Open Plan', style: TextStyle(fontSize: 12)),
@@ -468,7 +469,7 @@ class _ScoresLoadingPlaceholder extends StatelessWidget {
           child: Container(
             height: 120,
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.06),
+              color: PloyColors.fromWhiteAlpha(0.06),
               borderRadius: BorderRadius.circular(16),
             ),
           ),
@@ -504,7 +505,7 @@ class _TodayLoadingView extends StatelessWidget {
               width: 160,
               height: 12,
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.1),
+                color: PloyColors.fromWhiteAlpha(0.1),
                 borderRadius: BorderRadius.circular(4),
               ),
             ),
@@ -513,7 +514,7 @@ class _TodayLoadingView extends StatelessWidget {
               width: 240,
               height: 36,
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.12),
+                color: PloyColors.fromWhiteAlpha(0.12),
                 borderRadius: BorderRadius.circular(6),
               ),
             ),
@@ -592,7 +593,7 @@ class _TodayEmptyWelcome extends StatelessWidget {
               fontSize: tokens.typography.labelSize('labelEyebrow'),
               letterSpacing: tokens.typography.letterSpacing('labelEyebrow'),
               fontWeight: FontWeight.w600,
-              color: Colors.white.withValues(alpha: 0.55),
+              color: PloyColors.fromWhiteAlpha(0.55),
             ),
           ),
           SizedBox(height: tokens.spacing.md),
@@ -601,14 +602,14 @@ class _TodayEmptyWelcome extends StatelessWidget {
             style: PurpleType.displayStyle(
               fontSize: 30,
               height: 1.05,
-              color: const Color(0xFFF2F2F5),
+              color: PloyColors.ink,
             ),
           ),
           SizedBox(height: tokens.spacing.md),
           Text(
             'Write a sentence, speak a thought, or snap a photo. Purple does the rest.',
             style: PurpleType.bodySerif(
-              color: Colors.white.withValues(alpha: 0.75),
+              color: PloyColors.fromWhiteAlpha(0.75),
             ),
           ),
           SizedBox(height: tokens.spacing.xl),
@@ -623,7 +624,7 @@ class _TodayEmptyWelcome extends StatelessWidget {
                   onPressed: onStart,
                   style: FilledButton.styleFrom(
                     backgroundColor: purple,
-                    foregroundColor: const Color(0xFF0A0710),
+                    foregroundColor: Colors.white,
                     shape: const StadiumBorder(),
                     padding: const EdgeInsets.symmetric(horizontal: 24),
                   ),
@@ -636,7 +637,7 @@ class _TodayEmptyWelcome extends StatelessWidget {
                 child: TextButton(
                   onPressed: onDismiss,
                   style: TextButton.styleFrom(
-                    foregroundColor: Colors.white.withValues(alpha: 0.55),
+                    foregroundColor: PloyColors.fromWhiteAlpha(0.55),
                   ),
                   child: const Text(
                     'Skip for now',
@@ -677,7 +678,7 @@ class _Header extends StatelessWidget {
             style: PurpleType.displayStyle(
               fontSize: 28,
               height: 1.1,
-              color: const Color(0xFFF2F2F5),
+              color: PloyColors.ink,
             ),
           ),
         ),
@@ -685,14 +686,14 @@ class _Header extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.08),
+              color: PloyColors.fromWhiteAlpha(0.08),
               borderRadius: BorderRadius.circular(999),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+              border: Border.all(color: PloyColors.fromWhiteAlpha(0.12)),
             ),
             child: Text(
               'Offline',
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.7),
+                    color: PloyColors.fromWhiteAlpha(0.7),
                   ),
             ),
           ),
@@ -735,7 +736,7 @@ class _WearablesNudgeCard extends StatelessWidget {
             child: Icon(
               Icons.monitor_heart_outlined,
               size: 16,
-              color: Colors.white.withValues(alpha: 0.85),
+              color: PloyColors.fromWhiteAlpha(0.85),
             ),
           ),
           const SizedBox(width: 12),
@@ -746,7 +747,7 @@ class _WearablesNudgeCard extends StatelessWidget {
                 Text(
                   'Connect Oura or Whoop to see how your body affects your patterns.',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.93),
+                        color: PloyColors.fromWhiteAlpha(0.93),
                         height: 1.4,
                       ),
                 ),
@@ -771,7 +772,7 @@ class _WearablesNudgeCard extends StatelessWidget {
             onPressed: onDismiss,
             tooltip: 'Dismiss',
             iconSize: 16,
-            color: Colors.white.withValues(alpha: 0.55),
+            color: PloyColors.fromWhiteAlpha(0.55),
             icon: const Icon(Icons.close),
           ),
         ],
@@ -839,7 +840,7 @@ class _AnnouncementBanner extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.9),
+                        color: PloyColors.fromWhiteAlpha(0.9),
                         height: 1.35,
                       ),
                 ),
@@ -847,7 +848,7 @@ class _AnnouncementBanner extends StatelessWidget {
               Icon(
                 Icons.chevron_right,
                 size: 18,
-                color: Colors.white.withValues(alpha: 0.45),
+                color: PloyColors.fromWhiteAlpha(0.45),
               ),
             ],
           ),

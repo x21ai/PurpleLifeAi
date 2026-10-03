@@ -11,6 +11,7 @@ import 'chat_copy.dart';
 import 'chat_repository.dart';
 import 'chat_style.dart';
 import 'citation_text.dart';
+import '../../design/ploy_colors.dart';
 
 /// A single assistant turn plus any actions it proposed and their states.
 class _AssistantTurn {
@@ -273,7 +274,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                                   .textTheme
                                   .bodySmall
                                   ?.copyWith(
-                                    color: Colors.white.withValues(alpha: 0.55),
+                                    color: PloyColors.fromWhiteAlpha(0.55),
                                   ),
                             ),
                           ),
@@ -445,7 +446,7 @@ class _SaveToJournalButton extends StatelessWidget {
           style: TextButton.styleFrom(
             minimumSize: const Size(0, 44),
             padding: const EdgeInsets.symmetric(horizontal: 8),
-            foregroundColor: Colors.white.withValues(alpha: 0.7),
+            foregroundColor: PloyColors.fromWhiteAlpha(0.7),
           ),
           icon: Icon(
             saved ? Icons.check_rounded : Icons.bookmark_add_outlined,
@@ -454,7 +455,7 @@ class _SaveToJournalButton extends StatelessWidget {
           label: Text(
             saved ? ChatCopy.askSavedToJournal : ChatCopy.askSaveToJournal,
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.7),
+                  color: PloyColors.fromWhiteAlpha(0.7),
                 ),
           ),
         ),
@@ -513,7 +514,7 @@ class _ThinkingDots extends StatelessWidget {
                 height: 6,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.white.withValues(alpha: 0.55),
+                  color: PloyColors.fromWhiteAlpha(0.55),
                 ),
               ),
             );
@@ -533,7 +534,7 @@ class _LimitGate extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         border: Border(
-          top: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
+          top: BorderSide(color: PloyColors.fromWhiteAlpha(0.08)),
         ),
         color: CanvasBackground.canvasColor.withValues(alpha: 0.95),
       ),
@@ -547,14 +548,14 @@ class _LimitGate extends StatelessWidget {
               Text(
                 ChatCopy.askLimitTitle,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.95),
+                      color: PloyColors.fromWhiteAlpha(0.95),
                     ),
               ),
               const SizedBox(height: 8),
               Text(
                 ChatCopy.askLimitBody,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.7),
+                      color: PloyColors.fromWhiteAlpha(0.7),
                       height: 1.4,
                     ),
               ),
@@ -585,7 +586,7 @@ class _AskComposer extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         border: Border(
-          top: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
+          top: BorderSide(color: PloyColors.fromWhiteAlpha(0.08)),
         ),
         color: CanvasBackground.canvasColor.withValues(alpha: 0.95),
       ),
@@ -609,14 +610,14 @@ class _AskComposer extends StatelessWidget {
                     minLines: 1,
                     maxLines: 5,
                     enabled: !busy,
-                    style: TextStyle(color: Colors.white.withValues(alpha: 0.95)),
+                    style: TextStyle(color: PloyColors.fromWhiteAlpha(0.95)),
                     decoration: InputDecoration(
                       hintText: ChatCopy.askComposerHint,
                       hintStyle: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.4),
+                        color: PloyColors.fromWhiteAlpha(0.4),
                       ),
                       filled: true,
-                      fillColor: Colors.white.withValues(alpha: 0.06),
+                      fillColor: PloyColors.fromWhiteAlpha(0.06),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(20),
                         borderSide: BorderSide.none,
@@ -643,7 +644,7 @@ class _AskComposer extends StatelessWidget {
                           height: 18,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            color: Colors.white.withValues(alpha: 0.9),
+                            color: PloyColors.fromWhiteAlpha(0.9),
                           ),
                         )
                       : const Icon(Icons.send_rounded, size: 20),
@@ -658,7 +659,7 @@ class _AskComposer extends StatelessWidget {
                     : '$remaining free messages left today.',
                 textAlign: TextAlign.right,
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.45),
+                      color: PloyColors.fromWhiteAlpha(0.45),
                     ),
               ),
             ],

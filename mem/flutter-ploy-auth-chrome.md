@@ -13,5 +13,10 @@ Production copy is "Sign in to PurpleLife." on a light canvas with a white card.
 Do not port `src/routes/sign-in.tsx` ("Welcome back!"). That TanStack screen is obsolete.
 
 Password sign-in stays Worker JWT: `DATA_BACKEND=cloudflare`, `POST /api/auth/sign-in`.
-Reset password and welcome onboarding share this chrome. Today, Meds, and the
-rest of the signed-in app stay on the dark shell until a separate reskin.
+Reset password and welcome onboarding share this chrome.
+
+**2026-10-03 follow-up:** The signed-in app uses the same `.purplelife-pilot`
+palette. `flutter/lib/design/ploy_colors.dart` and both `design/tokens.json`
+color buckets are that light set. Do not put Today, Meds, or Journal back on
+the dark canvas. Pilot page layouts (WellbeingBloom, Today / Journal / Browse
+tabs) were not copied one-for-one; Flutter keeps its data screens on these tokens.

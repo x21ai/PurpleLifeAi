@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../../../design/tokens.dart';
 import '../models/report_row.dart';
+import '../../../design/ploy_colors.dart';
 
 /// Out-of-range (high) lab value color, from dark design tokens.
 Color get _dangerColor =>
@@ -65,7 +66,7 @@ class MetricLineChart extends StatelessWidget {
     final chartMin = minY - pad;
     final chartMax = maxY + pad;
 
-    final line = Colors.white.withValues(alpha: 0.85);
+    final line = PloyColors.fromWhiteAlpha(0.85);
 
     return SizedBox(
       height: height,
@@ -80,7 +81,7 @@ class MetricLineChart extends StatelessWidget {
             drawVerticalLine: false,
             horizontalInterval: (chartMax - chartMin) / 4,
             getDrawingHorizontalLine: (_) => FlLine(
-              color: Colors.white.withValues(alpha: 0.06),
+              color: PloyColors.fromWhiteAlpha(0.06),
               strokeWidth: 1,
             ),
           ),
@@ -96,7 +97,7 @@ class MetricLineChart extends StatelessWidget {
                   return Text(
                     _fmt(value),
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.4),
+                      color: PloyColors.fromWhiteAlpha(0.4),
                       fontSize: 10,
                     ),
                   );
@@ -115,19 +116,19 @@ class MetricLineChart extends StatelessWidget {
                 HorizontalRangeAnnotation(
                   y1: referenceLow!,
                   y2: referenceHigh!,
-                  color: Colors.white.withValues(alpha: 0.06),
+                  color: PloyColors.fromWhiteAlpha(0.06),
                 ),
             ],
           ),
           lineTouchData: LineTouchData(
             touchTooltipData: LineTouchTooltipData(
-              getTooltipColor: (_) => const Color(0xFF2A2340),
+              getTooltipColor: (_) => PloyColors.ink,
               getTooltipItems: (spots) => spots
                   .map(
                     (s) => LineTooltipItem(
                       _fmt(s.y),
-                      TextStyle(
-                        color: Colors.white.withValues(alpha: 0.95),
+                      const TextStyle(
+                        color: Colors.white,
                         fontSize: 12,
                       ),
                     ),
@@ -160,7 +161,7 @@ class MetricLineChart extends StatelessWidget {
               ),
               belowBarData: BarAreaData(
                 show: true,
-                color: Colors.white.withValues(alpha: 0.04),
+                color: PloyColors.fromWhiteAlpha(0.04),
               ),
             ),
           ],
@@ -211,7 +212,7 @@ class MetricSparkline extends StatelessWidget {
               spots: [for (final p in points) FlSpot(p.x, p.y)],
               isCurved: true,
               curveSmoothness: 0.2,
-              color: Colors.white.withValues(alpha: 0.7),
+              color: PloyColors.fromWhiteAlpha(0.7),
               barWidth: 1.5,
               dotData: const FlDotData(show: false),
             ),

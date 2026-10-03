@@ -22,5 +22,5 @@ Metric labels always show the canonical human name from `src/lib/metric-naming.t
 - [TestFlight beta feedback](observability/testflight-beta-feedback.md) - Share Beta Feedback iOS/TestFlight requirements, external tester alternatives, ASC + Luciq triage.
 - [Doppler Purple Life secrets](doppler-purple-life.md) - native iOS `x21`/`prd` `PURPLE_LIFE_*`; Worker deploy and www smoke `x21`/`prd_cloudflare`.
 - [Cloudflare cutover](cloudflare-cutover.md) - D1/R2/KV bindings, DATA_BACKEND flag, Workers JWT auth, PBKDF2 cap 100000, profiles scoped by `id`; Flutter `1.0.0+33` uses that JWT by default. Runbook `docs/CLOUDFLARE-MIGRATION.md`. Mac smoke Doppler is `x21`/`prd_cloudflare`.
-- [Flutter Ploy auth chrome](flutter-ploy-auth-chrome.md) - Sign-in, reset, and welcome use the live Ploy light shield. Today and Meds stay on the dark shell.
+- [Flutter Ploy auth chrome](flutter-ploy-auth-chrome.md) - Sign-in shield and the signed-in app share the live Ploy light tokens. No dark shell.
 - [Staging Ploy hybrid](staging-ploy-hybrid.md) - staging.purplelife.org uses `www-entry.ts`, live Ploy copy, shared production D1/R2/KV, no crons.

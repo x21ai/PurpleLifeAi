@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import '../../design/ploy_colors.dart';
 
 /// Layer 0 canvas background matching React Today/Vitals and `.auth-canvas`.
 class CanvasBackground extends StatelessWidget {
@@ -16,9 +17,9 @@ class CanvasBackground extends StatelessWidget {
   /// When true, paints the sign-in/register atmospheric gradient from React.
   final bool auth;
 
-  static const canvasColor = Color(0xFF0A0710);
-  static const authBaseColor = Color(0xFF050505);
-  static const gradientCenter = Color(0x24B084D1);
+  static const canvasColor = PloyColors.canvas;
+  static const authBaseColor = PloyColors.canvas;
+  static const gradientCenter = Color(0x148E61CF);
 
   static const _authGradient = BoxDecoration(
     color: authBaseColor,
@@ -43,7 +44,7 @@ class CanvasBackground extends StatelessWidget {
                 gradient: RadialGradient(
                   center: Alignment(-0.6, -1.1),
                   radius: 1.1,
-                  colors: [Color(0x387C3AED), Colors.transparent],
+                  colors: [Color(0x338E61CF), Colors.transparent],
                   stops: [0, 0.55],
                 ),
               ),
@@ -53,7 +54,7 @@ class CanvasBackground extends StatelessWidget {
                 gradient: RadialGradient(
                   center: Alignment(0.8, 1.2),
                   radius: 1.0,
-                  colors: [Color(0x294F46E5), Colors.transparent],
+                  colors: [Color(0x29F070BE), Colors.transparent],
                   stops: [0, 0.5],
                 ),
               ),
@@ -92,9 +93,16 @@ class GlassSurface extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final decoration = BoxDecoration(
-      color: kIsWeb ? const Color(0xCC0E0A14) : const Color(0x990E0A14),
+      color: PloyColors.surface,
       borderRadius: BorderRadius.circular(borderRadius),
-      border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+      border: Border.all(color: PloyColors.line),
+      boxShadow: const [
+        BoxShadow(
+          color: Color(0x0F18161D),
+          blurRadius: 16,
+          offset: Offset(0, 6),
+        ),
+      ],
     );
 
     final padded = Padding(padding: padding, child: child);
@@ -147,8 +155,8 @@ class GlassCard extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(borderRadius),
-        splashColor: Colors.white.withValues(alpha: 0.06),
-        highlightColor: Colors.white.withValues(alpha: 0.04),
+        splashColor: PloyColors.fromWhiteAlpha(0.06),
+        highlightColor: PloyColors.fromWhiteAlpha(0.04),
         child: card,
       ),
     );

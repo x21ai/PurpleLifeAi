@@ -16,6 +16,7 @@ import 'meds_repository.dart';
 import 'meds_style.dart';
 import 'models/dose.dart';
 import 'models/medication.dart';
+import '../../design/ploy_colors.dart';
 
 /// Meds page ported from web `src/routes/_app/meds.tsx`: serif header,
 /// Today's doses panel, Active/Archive tabs, kind filters, grouped library.
@@ -364,7 +365,7 @@ class _MedsScreenState extends ConsumerState<MedsScreen> {
                             'Tap a medication to see its dose history, edit the '
                             'dose, or archive it.',
                             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                  color: Colors.white.withValues(alpha: 0.5),
+                                  color: PloyColors.fromWhiteAlpha(0.5),
                                 ),
                           ),
                           const SizedBox(height: 16),

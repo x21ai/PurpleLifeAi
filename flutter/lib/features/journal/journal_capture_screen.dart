@@ -13,6 +13,7 @@ import 'journal_media_capture.dart';
 import 'journal_media_file.dart';
 import 'journal_repository.dart';
 import 'journal_style.dart';
+import '../../design/ploy_colors.dart';
 
 /// Journal capture flow mirroring web `journal.new.tsx` (standard dark theme
 /// canvas): sticky bar (close, title, Save pill), "when" picker, serif text
@@ -306,7 +307,7 @@ class _JournalCaptureScreenState extends ConsumerState<JournalCaptureScreen> {
     _dismissKeyboard();
     await showModalBottomSheet<void>(
       context: context,
-      backgroundColor: const Color(0xFF1A1520),
+      backgroundColor: PloyColors.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -357,7 +358,7 @@ class _JournalCaptureScreenState extends ConsumerState<JournalCaptureScreen> {
     _dismissKeyboard();
     await showModalBottomSheet<void>(
       context: context,
-      backgroundColor: const Color(0xFF1A1520),
+      backgroundColor: PloyColors.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -817,7 +818,7 @@ class _TopBar extends StatelessWidget {
               disabledBackgroundColor:
                   palette.purplePrimary.withValues(alpha: 0.35),
               foregroundColor: Colors.white,
-              disabledForegroundColor: Colors.white.withValues(alpha: 0.7),
+              disabledForegroundColor: PloyColors.fromWhiteAlpha(0.7),
               minimumSize: const Size(72, 44),
               tapTargetSize: MaterialTapTargetSize.padded,
               shape: const StadiumBorder(),

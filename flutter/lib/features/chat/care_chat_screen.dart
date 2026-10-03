@@ -14,6 +14,7 @@ import 'care_chat_pickers.dart';
 import 'care_chat_repository.dart';
 import 'chat_copy.dart';
 import 'chat_style.dart';
+import '../../design/ploy_colors.dart';
 
 /// Caregiver messaging shell mirroring web `/chat-care`.
 class ChatCareScreen extends ConsumerStatefulWidget {
@@ -150,7 +151,7 @@ class _CareChatError extends StatelessWidget {
             Text(
               'Could not load care chat',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.9),
+                    color: PloyColors.fromWhiteAlpha(0.9),
                   ),
             ),
             const SizedBox(height: 12),
@@ -223,7 +224,7 @@ class _ThreadListPanel extends ConsumerWidget {
             ],
           ),
         ),
-        Divider(height: 1, color: Colors.white.withValues(alpha: 0.08)),
+        Divider(height: 1, color: PloyColors.fromWhiteAlpha(0.08)),
         Expanded(
           child: threads.isEmpty
               ? _CareEmptyState(onOpenSharing: onOpenSharing)
@@ -268,14 +269,14 @@ class _CareEmptyState extends StatelessWidget {
           Icon(
             Icons.chat_bubble_outline,
             size: 40,
-            color: Colors.white.withValues(alpha: 0.35),
+            color: PloyColors.fromWhiteAlpha(0.35),
           ),
           const SizedBox(height: 16),
           Text(
             ChatCopy.careEmptyTitle,
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.9),
+                  color: PloyColors.fromWhiteAlpha(0.9),
                 ),
           ),
           const SizedBox(height: 8),
@@ -283,7 +284,7 @@ class _CareEmptyState extends StatelessWidget {
             ChatCopy.careEmptyBody,
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.6),
+                  color: PloyColors.fromWhiteAlpha(0.6),
                   height: 1.45,
                 ),
           ),
@@ -321,7 +322,7 @@ class _ThreadTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: selected
-          ? Colors.white.withValues(alpha: 0.08)
+          ? PloyColors.fromWhiteAlpha(0.08)
           : Colors.transparent,
       child: InkWell(
         onTap: onTap,
@@ -349,7 +350,7 @@ class _ThreadTile extends StatelessWidget {
                           Icon(
                             Icons.groups_outlined,
                             size: 14,
-                            color: Colors.white.withValues(alpha: 0.5),
+                            color: PloyColors.fromWhiteAlpha(0.5),
                           ),
                           const SizedBox(width: 6),
                         ],
@@ -359,7 +360,7 @@ class _ThreadTile extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  color: Colors.white.withValues(alpha: 0.92),
+                                  color: PloyColors.fromWhiteAlpha(0.92),
                                   fontWeight: FontWeight.w600,
                                 ),
                           ),
@@ -372,7 +373,7 @@ class _ThreadTile extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.5),
+                            color: PloyColors.fromWhiteAlpha(0.5),
                           ),
                     ),
                   ],
@@ -385,7 +386,7 @@ class _ThreadTile extends StatelessWidget {
                   Text(
                     timeLabel,
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: Colors.white.withValues(alpha: 0.45),
+                          color: PloyColors.fromWhiteAlpha(0.45),
                         ),
                   ),
                   if (unread > 0) ...[
@@ -438,7 +439,7 @@ class _ConversationPlaceholder extends StatelessWidget {
                 onPressed: onBack,
                 icon: Icon(
                   Icons.arrow_back,
-                  color: Colors.white.withValues(alpha: 0.7),
+                  color: PloyColors.fromWhiteAlpha(0.7),
                 ),
               ),
             ),
@@ -451,7 +452,7 @@ class _ConversationPlaceholder extends StatelessWidget {
                 hasThreads ? ChatCopy.careSelectThread : ChatCopy.careNoRelationships,
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.55),
+                      color: PloyColors.fromWhiteAlpha(0.55),
                     ),
               ),
             ),
@@ -662,12 +663,12 @@ class _ConversationPanelState extends ConsumerState<_ConversationPanel> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF15121D),
+        backgroundColor: PloyColors.surface,
         title: const Text('Leave this chat?',
-            style: TextStyle(color: Colors.white)),
+            style: TextStyle(color: PloyColors.ink)),
         content: Text(
           'You can be re-added later by the chat owner.',
-          style: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
+          style: TextStyle(color: PloyColors.fromWhiteAlpha(0.7)),
         ),
         actions: [
           TextButton(
@@ -735,13 +736,13 @@ class _ConversationPanelState extends ConsumerState<_ConversationPanel> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.08),
+            color: PloyColors.fromWhiteAlpha(0.08),
             borderRadius: BorderRadius.circular(999),
           ),
           child: Text(
             _dayLabel(iso),
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.6),
+                  color: PloyColors.fromWhiteAlpha(0.6),
                   letterSpacing: 0.5,
                 ),
           ),
@@ -769,7 +770,7 @@ class _ConversationPanelState extends ConsumerState<_ConversationPanel> {
         decoration: BoxDecoration(
           color: mine
               ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.85)
-              : Colors.white.withValues(alpha: 0.08),
+              : PloyColors.fromWhiteAlpha(0.08),
           borderRadius: BorderRadius.circular(16),
         ),
         child: Column(
@@ -780,7 +781,7 @@ class _ConversationPanelState extends ConsumerState<_ConversationPanel> {
               Text(
                 senderName,
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.65),
+                      color: PloyColors.fromWhiteAlpha(0.65),
                       fontWeight: FontWeight.w600,
                     ),
               ),
@@ -790,8 +791,8 @@ class _ConversationPanelState extends ConsumerState<_ConversationPanel> {
               Text(
                 'Message deleted',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: (mine ? onPrimary : Colors.white)
-                          .withValues(alpha: 0.5),
+                      color: (mine ? onPrimary : PloyColors.muted)
+                          .withValues(alpha: mine ? 0.5 : 1),
                       fontStyle: FontStyle.italic,
                     ),
               )
@@ -814,7 +815,7 @@ class _ConversationPanelState extends ConsumerState<_ConversationPanel> {
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: mine
                             ? onPrimary
-                            : Colors.white.withValues(alpha: 0.92),
+                            : PloyColors.fromWhiteAlpha(0.92),
                       ),
                 ),
             ],
@@ -824,7 +825,7 @@ class _ConversationPanelState extends ConsumerState<_ConversationPanel> {
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
                     color: mine
                         ? onPrimary.withValues(alpha: 0.75)
-                        : Colors.white.withValues(alpha: 0.45),
+                        : PloyColors.fromWhiteAlpha(0.45),
                   ),
             ),
           ],
@@ -850,7 +851,7 @@ class _ConversationPanelState extends ConsumerState<_ConversationPanel> {
                   onPressed: widget.onBack,
                   icon: Icon(
                     Icons.arrow_back,
-                    color: Colors.white.withValues(alpha: 0.7),
+                    color: PloyColors.fromWhiteAlpha(0.7),
                   ),
                 ),
               Expanded(
@@ -862,7 +863,7 @@ class _ConversationPanelState extends ConsumerState<_ConversationPanel> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.92),
+                            color: PloyColors.fromWhiteAlpha(0.92),
                             fontWeight: FontWeight.w600,
                           ),
                     ),
@@ -870,7 +871,7 @@ class _ConversationPanelState extends ConsumerState<_ConversationPanel> {
                       Text(
                         '${widget.thread.others.length + 1} people',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Colors.white.withValues(alpha: 0.5),
+                              color: PloyColors.fromWhiteAlpha(0.5),
                             ),
                       ),
                   ],
@@ -882,16 +883,16 @@ class _ConversationPanelState extends ConsumerState<_ConversationPanel> {
                   child: Icon(
                     Icons.notifications_off_outlined,
                     size: 18,
-                    color: Colors.white.withValues(alpha: 0.5),
+                    color: PloyColors.fromWhiteAlpha(0.5),
                   ),
                 ),
               PopupMenuButton<String>(
                 tooltip: 'Chat options',
                 icon: Icon(
                   Icons.more_vert,
-                  color: Colors.white.withValues(alpha: 0.7),
+                  color: PloyColors.fromWhiteAlpha(0.7),
                 ),
-                color: const Color(0xFF1B1724),
+                color: PloyColors.surface,
                 enabled: !_muteBusy,
                 onSelected: (value) {
                   if (value == 'mute') {
@@ -912,14 +913,14 @@ class _ConversationPanelState extends ConsumerState<_ConversationPanel> {
                                 ? Icons.notifications_active_outlined
                                 : Icons.notifications_off_outlined,
                             size: 18,
-                            color: Colors.white.withValues(alpha: 0.85),
+                            color: PloyColors.fromWhiteAlpha(0.85),
                           ),
                           const SizedBox(width: 10),
                           Text(
                             widget.thread.muted
                                 ? 'Unmute notifications'
                                 : 'Mute notifications',
-                            style: const TextStyle(color: Colors.white),
+                            style: const TextStyle(color: PloyColors.ink),
                           ),
                         ],
                       ),
@@ -942,7 +943,7 @@ class _ConversationPanelState extends ConsumerState<_ConversationPanel> {
             ],
           ),
         ),
-        Divider(height: 1, color: Colors.white.withValues(alpha: 0.08)),
+        Divider(height: 1, color: PloyColors.fromWhiteAlpha(0.08)),
         Expanded(
           child: messagesAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
@@ -965,13 +966,13 @@ class _ConversationPanelState extends ConsumerState<_ConversationPanel> {
                         Icon(
                           Icons.forum_outlined,
                           size: 36,
-                          color: Colors.white.withValues(alpha: 0.35),
+                          color: PloyColors.fromWhiteAlpha(0.35),
                         ),
                         const SizedBox(height: 12),
                         Text(
                           'No messages yet',
                           style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                color: Colors.white.withValues(alpha: 0.85),
+                                color: PloyColors.fromWhiteAlpha(0.85),
                               ),
                         ),
                         const SizedBox(height: 8),
@@ -979,7 +980,7 @@ class _ConversationPanelState extends ConsumerState<_ConversationPanel> {
                           ChatCopy.careConnectBody,
                           textAlign: TextAlign.center,
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: Colors.white.withValues(alpha: 0.55),
+                                color: PloyColors.fromWhiteAlpha(0.55),
                                 height: 1.4,
                               ),
                         ),
@@ -1021,7 +1022,7 @@ class _ConversationPanelState extends ConsumerState<_ConversationPanel> {
             },
           ),
         ),
-        Divider(height: 1, color: Colors.white.withValues(alpha: 0.08)),
+        Divider(height: 1, color: PloyColors.fromWhiteAlpha(0.08)),
         if (_pendingAttachments.isNotEmpty)
           Padding(
             padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
@@ -1034,17 +1035,17 @@ class _ConversationPanelState extends ConsumerState<_ConversationPanel> {
                 itemBuilder: (context, index) {
                   final file = _pendingAttachments[index];
                   return Chip(
-                    backgroundColor: Colors.white.withValues(alpha: 0.08),
+                    backgroundColor: PloyColors.fromWhiteAlpha(0.08),
                     label: Text(
                       file.name,
-                      style: const TextStyle(color: Colors.white, fontSize: 12),
+                      style: const TextStyle(color: PloyColors.ink, fontSize: 12),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                     deleteIcon: Icon(
                       Icons.close,
                       size: 16,
-                      color: Colors.white.withValues(alpha: 0.6),
+                      color: PloyColors.fromWhiteAlpha(0.6),
                     ),
                     onDeleted: () => _removePendingAttachment(index),
                   );
@@ -1061,7 +1062,7 @@ class _ConversationPanelState extends ConsumerState<_ConversationPanel> {
                 tooltip: 'Attach',
                 icon: Icon(
                   Icons.attach_file,
-                  color: Colors.white.withValues(alpha: 0.7),
+                  color: PloyColors.fromWhiteAlpha(0.7),
                 ),
               ),
               Expanded(
@@ -1073,10 +1074,10 @@ class _ConversationPanelState extends ConsumerState<_ConversationPanel> {
                   decoration: InputDecoration(
                     hintText: ChatCopy.careComposerHint,
                     hintStyle: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.35),
+                      color: PloyColors.fromWhiteAlpha(0.35),
                     ),
                     filled: true,
-                    fillColor: Colors.white.withValues(alpha: 0.04),
+                    fillColor: PloyColors.fromWhiteAlpha(0.04),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(20),
                       borderSide: BorderSide.none,
@@ -1086,7 +1087,7 @@ class _ConversationPanelState extends ConsumerState<_ConversationPanel> {
                       vertical: 12,
                     ),
                   ),
-                  style: TextStyle(color: Colors.white.withValues(alpha: 0.92)),
+                  style: TextStyle(color: PloyColors.fromWhiteAlpha(0.92)),
                 ),
               ),
               const SizedBox(width: 8),
@@ -1099,7 +1100,7 @@ class _ConversationPanelState extends ConsumerState<_ConversationPanel> {
                         height: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: Colors.white.withValues(alpha: 0.7),
+                          color: PloyColors.fromWhiteAlpha(0.7),
                         ),
                       )
                     : Icon(

@@ -8,6 +8,7 @@ import '../shared/glass_helpers.dart';
 import '../shared/loading_skeleton.dart';
 import 'reports_repository.dart';
 import 'widgets/report_tiles.dart';
+import '../../design/ploy_colors.dart';
 
 /// Medical history PDF list mirroring web `/reports/medical-history`.
 class ReportsMedicalHistoryScreen extends ConsumerWidget {
@@ -28,11 +29,11 @@ class ReportsMedicalHistoryScreen extends ConsumerWidget {
                 onPressed: () => context.go(AppRoutes.reportsDocuments),
                 icon: Icon(
                   Icons.arrow_back,
-                  color: Colors.white.withValues(alpha: 0.55),
+                  color: PloyColors.fromWhiteAlpha(0.55),
                 ),
                 label: Text(
                   'Reports',
-                  style: TextStyle(color: Colors.white.withValues(alpha: 0.55)),
+                  style: TextStyle(color: PloyColors.fromWhiteAlpha(0.55)),
                 ),
               ),
               const SizedBox(height: 16),
@@ -40,7 +41,7 @@ class ReportsMedicalHistoryScreen extends ConsumerWidget {
                 'MEDICAL HISTORY',
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
                       letterSpacing: 1.2,
-                      color: Colors.white.withValues(alpha: 0.45),
+                      color: PloyColors.fromWhiteAlpha(0.45),
                     ),
               ),
               const SizedBox(height: 8),
@@ -48,14 +49,14 @@ class ReportsMedicalHistoryScreen extends ConsumerWidget {
                 'Clinician\nPDF reports',
                 style: Theme.of(context).textTheme.displaySmall?.copyWith(
                       height: 1.02,
-                      color: Colors.white.withValues(alpha: 0.95),
+                      color: PloyColors.fromWhiteAlpha(0.95),
                     ),
               ),
               const SizedBox(height: 12),
               Text(
                 'Consolidated PDFs from meds, seizures, biometrics, labs, and journal entries.',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.65),
+                      color: PloyColors.fromWhiteAlpha(0.65),
                       height: 1.5,
                     ),
               ),
@@ -69,14 +70,14 @@ class ReportsMedicalHistoryScreen extends ConsumerWidget {
                     Text(
                       'Generate on web',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.95),
+                            color: PloyColors.fromWhiteAlpha(0.95),
                           ),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       'PDF generation, email to your clinician, share links, and monthly auto-reports are available in the web app today. Flutter lists your existing reports below.',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.65),
+                            color: PloyColors.fromWhiteAlpha(0.65),
                             height: 1.45,
                           ),
                     ),

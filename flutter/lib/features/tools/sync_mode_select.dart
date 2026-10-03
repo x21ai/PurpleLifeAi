@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/data/purple_client.dart';
+import '../../design/ploy_colors.dart';
 
 /// Sync-mode picker for pull-based wearables (mirrors web `SyncModeSelect`).
 class SyncModeSelect extends StatefulWidget {
@@ -107,18 +108,18 @@ class _SyncModeSelectState extends State<SyncModeSelect> {
       width: 190,
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.06),
+          color: PloyColors.fromWhiteAlpha(0.06),
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+          border: Border.all(color: PloyColors.fromWhiteAlpha(0.12)),
         ),
         child: DropdownButtonHideUnderline(
           child: DropdownButton<String>(
             value: _value,
             isExpanded: true,
             padding: const EdgeInsets.symmetric(horizontal: 12),
-            dropdownColor: const Color(0xFF1A1224),
+            dropdownColor: PloyColors.surface,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.85),
+                  color: PloyColors.fromWhiteAlpha(0.85),
                 ),
             items: _options.entries
                 .map(

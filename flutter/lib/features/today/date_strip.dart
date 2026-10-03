@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../../design/purple_type.dart';
 import '../../design/tokens.dart';
 import '../shared/glass_helpers.dart';
+import '../../design/ploy_colors.dart';
 
 /// Horizontal date strip ported from `src/components/today/date-strip.tsx`:
 /// 7 past days + today + 7 future days (future disabled at 30% opacity),
@@ -128,7 +129,7 @@ class _DateStripState extends State<DateStrip> {
                 style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFFF2F2F5),
+                  color: PloyColors.ink,
                   fontFeatures: [FontFeature.tabularFigures()],
                 ),
               ),
@@ -141,7 +142,7 @@ class _DateStripState extends State<DateStrip> {
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w500,
-                    color: Color(0xFFF2F2F5),
+                    color: PloyColors.ink,
                   ),
                 ),
               ),
@@ -153,7 +154,7 @@ class _DateStripState extends State<DateStrip> {
               child: Icon(
                 Icons.calendar_today_outlined,
                 size: 14,
-                color: Colors.white.withValues(alpha: 0.55),
+                color: PloyColors.fromWhiteAlpha(0.55),
               ),
             ),
           ],
@@ -247,7 +248,7 @@ class _DayTile extends StatelessWidget {
                         highlightEyebrow ? FontWeight.w600 : FontWeight.w400,
                     color: highlightEyebrow
                         ? purple
-                        : Colors.white.withValues(alpha: 0.55),
+                        : PloyColors.fromWhiteAlpha(0.55),
                   ),
                 ),
               ),
@@ -259,8 +260,8 @@ class _DayTile extends StatelessWidget {
                 fontFamily: PurpleType.serif,
                 fontSize: 20,
                 color: isSelected && !isFuture
-                    ? const Color(0xFFF2F2F5)
-                    : Colors.white.withValues(alpha: 0.55),
+                    ? PloyColors.ink
+                    : PloyColors.fromWhiteAlpha(0.55),
                 fontFeatures: const [FontFeature.tabularFigures()],
               ),
             ),
@@ -297,8 +298,8 @@ class _DayTile extends StatelessWidget {
               child: InkWell(
                 onTap: onTap,
                 borderRadius: BorderRadius.circular(18),
-                splashColor: Colors.white.withValues(alpha: 0.06),
-                highlightColor: Colors.white.withValues(alpha: 0.04),
+                splashColor: PloyColors.fromWhiteAlpha(0.06),
+                highlightColor: PloyColors.fromWhiteAlpha(0.04),
                 child: tile,
               ),
             ),

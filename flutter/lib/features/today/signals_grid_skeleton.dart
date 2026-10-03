@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../design/tokens.dart';
 import '../shared/glass_helpers.dart';
+import '../../design/ploy_colors.dart';
 
 /// Placeholder grid matching web `TodayVitals` loading skeleton (2x3 tiles).
 class SignalsGridSkeleton extends StatelessWidget {
@@ -18,7 +19,7 @@ class SignalsGridSkeleton extends StatelessWidget {
           width: 96,
           height: 10,
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.1),
+            color: PloyColors.fromWhiteAlpha(0.1),
             borderRadius: BorderRadius.circular(4),
           ),
         ),
@@ -41,7 +42,7 @@ class SignalsGridSkeleton extends StatelessWidget {
                 padding: EdgeInsets.zero,
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.06),
+                    color: PloyColors.fromWhiteAlpha(0.06),
                     borderRadius: BorderRadius.circular(16),
                   ),
                 ),

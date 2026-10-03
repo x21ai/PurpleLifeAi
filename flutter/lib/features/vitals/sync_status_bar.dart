@@ -10,6 +10,7 @@ import '../../core/providers/core_providers.dart';
 import '../health/health_providers.dart';
 import '../health/health_service.dart';
 import '../today/wearable_sync.dart';
+import '../../design/ploy_colors.dart';
 
 /// Wearable sync status bar ported from `src/components/biometrics/sync-status.tsx`.
 class SyncStatusBar extends ConsumerStatefulWidget {
@@ -305,10 +306,10 @@ class _SyncStatusBarState extends ConsumerState<SyncStatusBar> {
                       height: 14,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: Colors.white.withValues(alpha: 0.7),
+                        color: PloyColors.fromWhiteAlpha(0.7),
                       ),
                     )
-                  : Icon(Icons.refresh, size: 16, color: Colors.white.withValues(alpha: 0.65)),
+                  : Icon(Icons.refresh, size: 16, color: PloyColors.fromWhiteAlpha(0.65)),
               tooltip: _syncButtonLabel,
             ),
         ],
@@ -328,7 +329,7 @@ class _SyncStatusBarState extends ConsumerState<SyncStatusBar> {
                   children: [
                     TextSpan(
                       text: dataThroughLabel ?? '–',
-                      style: TextStyle(color: Colors.white.withValues(alpha: 0.8)),
+                      style: TextStyle(color: PloyColors.fromWhiteAlpha(0.8)),
                     ),
                   ],
                 ),
@@ -342,7 +343,7 @@ class _SyncStatusBarState extends ConsumerState<SyncStatusBar> {
                       text: pulledDate == null
                           ? 'never'
                           : '${formatRelativeTime(pulledDate)} · ${DateFormat('EEE h:mm a').format(pulledDate)}',
-                      style: TextStyle(color: Colors.white.withValues(alpha: 0.8)),
+                      style: TextStyle(color: PloyColors.fromWhiteAlpha(0.8)),
                     ),
                   ],
                 ),
@@ -364,10 +365,10 @@ class _SyncStatusBarState extends ConsumerState<SyncStatusBar> {
                     height: 14,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      color: Colors.white.withValues(alpha: 0.7),
+                      color: PloyColors.fromWhiteAlpha(0.7),
                     ),
                   )
-                : Icon(Icons.refresh, size: 16, color: Colors.white.withValues(alpha: 0.8)),
+                : Icon(Icons.refresh, size: 16, color: PloyColors.fromWhiteAlpha(0.8)),
             label: Text(_syncButtonLabel),
           ),
       ],
@@ -377,7 +378,7 @@ class _SyncStatusBarState extends ConsumerState<SyncStatusBar> {
   TextStyle? _labelStyle(BuildContext context, {double opacity = 1}) {
     return Theme.of(context).textTheme.labelSmall?.copyWith(
           fontSize: 11,
-          color: Colors.white.withValues(alpha: 0.55 * opacity),
+          color: PloyColors.muted.withValues(alpha: opacity),
         );
   }
 }

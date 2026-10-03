@@ -8,6 +8,7 @@ import '../../shell/routes.dart';
 import '../shared/condition_prompts.dart';
 import '../shared/glass_helpers.dart';
 import '../today/today_repository.dart';
+import '../../design/ploy_colors.dart';
 
 /// Ask Maya landing: greeting, condition-aware prompt chips, upload labs CTA.
 class AskMayaScreen extends ConsumerWidget {
@@ -39,7 +40,7 @@ class AskMayaScreen extends ConsumerWidget {
                 'ASK MAYA',
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
                       letterSpacing: 1.4,
-                      color: Colors.white.withValues(alpha: 0.55),
+                      color: PloyColors.fromWhiteAlpha(0.55),
                     ),
               ),
               const SizedBox(height: 12),
@@ -48,7 +49,7 @@ class AskMayaScreen extends ConsumerWidget {
                 style: PurpleType.serifStyle(
                   fontSize: 32,
                   height: 1.05,
-                  color: Colors.white.withValues(alpha: 0.95),
+                  color: PloyColors.fromWhiteAlpha(0.95),
                 ),
               ),
               const SizedBox(height: 20),
@@ -70,7 +71,7 @@ class AskMayaScreen extends ConsumerWidget {
                       'Hi $greetingName, I know your conditions and wearable '
                       'data. What would you like to explore?',
                       style: PurpleType.bodySerif(
-                        color: Colors.white.withValues(alpha: 0.85),
+                        color: PloyColors.fromWhiteAlpha(0.85),
                       ),
                     ),
                   ],
@@ -101,7 +102,7 @@ class AskMayaScreen extends ConsumerWidget {
                     Text(
                       'Upload past labs',
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.92),
+                            color: PloyColors.fromWhiteAlpha(0.92),
                             fontWeight: FontWeight.w600,
                           ),
                     ),
@@ -110,7 +111,7 @@ class AskMayaScreen extends ConsumerWidget {
                       'Add PDF lab reports to populate report metrics and '
                       'unlock biomarker trends.',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.7),
+                            color: PloyColors.fromWhiteAlpha(0.7),
                             height: 1.45,
                           ),
                     ),
@@ -128,9 +129,9 @@ class AskMayaScreen extends ConsumerWidget {
                 child: OutlinedButton(
                   onPressed: () => context.go(AppRoutes.chat),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.white.withValues(alpha: 0.85),
+                    foregroundColor: PloyColors.fromWhiteAlpha(0.85),
                     side: BorderSide(
-                      color: Colors.white.withValues(alpha: 0.12),
+                      color: PloyColors.fromWhiteAlpha(0.12),
                     ),
                     minimumSize: const Size.fromHeight(48),
                   ),
@@ -171,7 +172,7 @@ class _PromptChip extends StatelessWidget {
     return Material(
       color: highlighted
           ? activeColor.withValues(alpha: 0.18)
-          : Colors.white.withValues(alpha: 0.06),
+          : PloyColors.fromWhiteAlpha(0.06),
       borderRadius: BorderRadius.circular(999),
       child: InkWell(
         onTap: onTap,
@@ -184,7 +185,7 @@ class _PromptChip extends StatelessWidget {
               label,
               style: PurpleType.sansStyle(
                 fontSize: 13,
-                color: Colors.white.withValues(alpha: 0.85),
+                color: PloyColors.fromWhiteAlpha(0.85),
                 height: 1.3,
               ),
             ),
