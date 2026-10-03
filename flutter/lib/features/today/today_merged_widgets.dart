@@ -10,6 +10,7 @@ import '../../shell/routes.dart';
 import '../plan/recommended_catalog.dart';
 import '../shared/condition_prompts.dart';
 import 'models/score_snapshot.dart';
+import '../../design/ploy_colors.dart';
 
 bool sleepHeartFocusForConditions(List<String> conditions) {
   final lower = conditions.map((c) => c.toLowerCase()).toList();
@@ -93,7 +94,7 @@ class TodayPersonalizationStrip extends StatelessWidget {
                       : 'Setup · $_completed/3 · $_detail',
                   style: PurpleType.sansStyle(
                     fontSize: 12,
-                    color: Colors.white.withValues(alpha: 0.75),
+                    color: PloyColors.fromWhiteAlpha(0.75),
                   ),
                 ),
               ),
@@ -207,7 +208,7 @@ class _ReadinessGaugeCard extends StatelessWidget {
             style: TextStyle(
               fontSize: 10,
               letterSpacing: 0.06,
-              color: Colors.white.withValues(alpha: 0.55),
+              color: PloyColors.fromWhiteAlpha(0.55),
             ),
           ),
           const SizedBox(height: 4),
@@ -317,7 +318,7 @@ class _SleepScoreCard extends StatelessWidget {
             style: TextStyle(
               fontSize: 10,
               letterSpacing: 0.06,
-              color: Colors.white.withValues(alpha: 0.55),
+              color: PloyColors.fromWhiteAlpha(0.55),
             ),
           ),
           const SizedBox(height: 4),
@@ -334,7 +335,7 @@ class _SleepScoreCard extends StatelessWidget {
             'last night',
             style: PurpleType.sansStyle(
               fontSize: 11,
-              color: Colors.white.withValues(alpha: 0.55),
+              color: PloyColors.fromWhiteAlpha(0.55),
             ),
           ),
         ],
@@ -389,7 +390,7 @@ class TodayRecommendedInline extends StatelessWidget {
                 fontSize: 11,
                 letterSpacing: 0.08,
                 fontWeight: FontWeight.w600,
-                color: Colors.white.withValues(alpha: 0.55),
+                color: PloyColors.fromWhiteAlpha(0.55),
               ),
             ),
             const Spacer(),
@@ -437,7 +438,7 @@ class TodayRecommendedInline extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFFF2F2F5),
+                      color: PloyColors.ink,
                     ),
                   ),
                   const SizedBox(height: 6),
@@ -572,7 +573,7 @@ class TodayMetricStrip extends StatelessWidget {
 
     final colors = PurpleTokens.loaded.colorsFor('dark');
     final purple = parseTokenColor(colors.purplePrimary);
-    final muted = Colors.white.withValues(alpha: 0.45);
+    final muted = PloyColors.fromWhiteAlpha(0.45);
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -610,7 +611,7 @@ class TodayMetricStrip extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 10,
                           letterSpacing: 0.06,
-                          color: Colors.white.withValues(alpha: 0.55),
+                          color: PloyColors.fromWhiteAlpha(0.55),
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -621,7 +622,7 @@ class TodayMetricStrip extends StatelessWidget {
                           height: 1.1,
                           color: chip.value == _emptyValue
                               ? muted
-                              : Colors.white.withValues(alpha: 0.95),
+                              : PloyColors.fromWhiteAlpha(0.95),
                         ),
                       ),
                     ],
@@ -720,14 +721,14 @@ class TodayProtocolTeaser extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFFF2F2F5),
+                    color: PloyColors.ink,
                   ),
                 ),
                 const SizedBox(height: 6),
                 Text(
                   copy.body,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.55),
+                        color: PloyColors.fromWhiteAlpha(0.55),
                         height: 1.4,
                       ),
                 ),
@@ -770,7 +771,7 @@ class TodayAskMayaChips extends StatelessWidget {
             fontSize: 11,
             letterSpacing: 0.08,
             fontWeight: FontWeight.w600,
-            color: Colors.white.withValues(alpha: 0.55),
+            color: PloyColors.fromWhiteAlpha(0.55),
           ),
         ),
         const SizedBox(height: 8),

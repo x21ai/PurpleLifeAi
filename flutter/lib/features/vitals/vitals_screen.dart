@@ -18,6 +18,7 @@ import '../shared/metric_constants.dart';
 import 'metric_detail_screen.dart';
 import 'synced_data_panel.dart';
 import 'vitals_repository.dart';
+import '../../design/ploy_colors.dart';
 
 /// Status band colors mirroring web `BAND_COLOR` (data-good/info/warn/alert).
 enum MetricBand { excellent, good, fair, attention }
@@ -146,13 +147,13 @@ class _VitalsScreenState extends ConsumerState<VitalsScreen> {
                                   .textTheme
                                   .bodyMedium
                                   ?.copyWith(
-                                    color: Colors.white.withValues(alpha: 0.55),
+                                    color: PloyColors.fromWhiteAlpha(0.55),
                                   ),
                             ),
                             Icon(
                               Icons.chevron_right,
                               size: 16,
-                              color: Colors.white.withValues(alpha: 0.55),
+                              color: PloyColors.fromWhiteAlpha(0.55),
                             ),
                           ],
                         ),
@@ -320,7 +321,7 @@ class _VitalsScreenState extends ConsumerState<VitalsScreen> {
                       Text(
                         'Showing cached vitals (offline)',
                         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                              color: Colors.white.withValues(alpha: 0.45),
+                              color: PloyColors.fromWhiteAlpha(0.45),
                             ),
                       ),
                     ],
@@ -346,7 +347,7 @@ class _VitalsScreenState extends ConsumerState<VitalsScreen> {
           'VITALS',
           style: Theme.of(context).textTheme.labelSmall?.copyWith(
                 letterSpacing: 1.2,
-                color: Colors.white.withValues(alpha: 0.45),
+                color: PloyColors.fromWhiteAlpha(0.45),
               ),
         ),
         SizedBox(
@@ -359,7 +360,7 @@ class _VitalsScreenState extends ConsumerState<VitalsScreen> {
             icon: Icon(
               Icons.edit_outlined,
               size: 16,
-              color: Colors.white.withValues(alpha: 0.55),
+              color: PloyColors.fromWhiteAlpha(0.55),
             ),
           ),
         ),
@@ -371,7 +372,7 @@ class _VitalsScreenState extends ConsumerState<VitalsScreen> {
   // Title rendered via [DataHeroHeader] in build().
 
   Widget _buildConnectLink(BuildContext context) {
-    final muted = Colors.white.withValues(alpha: 0.55);
+    final muted = PloyColors.fromWhiteAlpha(0.55);
     return TextButton(
       onPressed: () => context.go(AppRoutes.tools),
       style: TextButton.styleFrom(
@@ -434,7 +435,7 @@ class _LatestReadingMarker extends StatelessWidget {
             child: Text(
               label,
               style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.9),
+                    color: PloyColors.fromWhiteAlpha(0.9),
                     fontWeight: FontWeight.w600,
                   ),
             ),
@@ -469,21 +470,21 @@ class _VitalsLoadError extends StatelessWidget {
                 'VITALS',
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
                       letterSpacing: 1.2,
-                      color: Colors.white.withValues(alpha: 0.5),
+                      color: PloyColors.fromWhiteAlpha(0.5),
                     ),
               ),
               const SizedBox(height: 10),
               Text(
                 'Could not load vitals',
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.95),
+                      color: PloyColors.fromWhiteAlpha(0.95),
                     ),
               ),
               const SizedBox(height: 8),
               Text(
                 message,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.7),
+                      color: PloyColors.fromWhiteAlpha(0.7),
                       height: 1.45,
                     ),
               ),
@@ -548,12 +549,12 @@ class _SectionHeader extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 16, color: Colors.white.withValues(alpha: 0.55)),
+          Icon(icon, size: 16, color: PloyColors.fromWhiteAlpha(0.55)),
           const SizedBox(width: 12),
           Text(
             title,
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.92),
+                  color: PloyColors.fromWhiteAlpha(0.92),
                   fontWeight: FontWeight.w600,
                 ),
           ),
@@ -597,7 +598,7 @@ class _HydrationSection extends StatelessWidget {
                                 .textTheme
                                 .bodySmall
                                 ?.copyWith(
-                                  color: Colors.white.withValues(alpha: 0.55),
+                                  color: PloyColors.fromWhiteAlpha(0.55),
                                 ),
                           ),
                           const SizedBox(height: 8),
@@ -618,7 +619,7 @@ class _HydrationSection extends StatelessWidget {
                     Icon(
                       Icons.chevron_right,
                       size: 16,
-                      color: Colors.white.withValues(alpha: 0.4),
+                      color: PloyColors.fromWhiteAlpha(0.4),
                     ),
                   ],
                 ),
@@ -629,7 +630,7 @@ class _HydrationSection extends StatelessWidget {
                         fontFamily: PurpleType.serif,
                         fontSize: 28,
                         height: 1.2,
-                        color: Colors.white.withValues(alpha: 0.95),
+                        color: PloyColors.fromWhiteAlpha(0.95),
                       ),
                 ),
               ],
@@ -672,7 +673,7 @@ class _MetricCard extends StatelessWidget {
             child: Icon(
               Icons.chevron_right,
               size: 16,
-              color: Colors.white.withValues(alpha: 0.4),
+              color: PloyColors.fromWhiteAlpha(0.4),
             ),
           ),
           Column(
@@ -683,7 +684,7 @@ class _MetricCard extends StatelessWidget {
                 child: Text(
                   title,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.55),
+                        color: PloyColors.fromWhiteAlpha(0.55),
                       ),
                 ),
               ),
@@ -706,7 +707,7 @@ class _MetricCard extends StatelessWidget {
                     style: Theme.of(context).textTheme.displaySmall?.copyWith(
                           fontFamily: PurpleType.serif,
                           fontSize: 44,
-                          color: Colors.white.withValues(alpha: 0.95),
+                          color: PloyColors.fromWhiteAlpha(0.95),
                           height: 1,
                         ),
                     children: suffix == null
@@ -719,7 +720,7 @@ class _MetricCard extends StatelessWidget {
                                   .bodyMedium
                                   ?.copyWith(
                                     color:
-                                        Colors.white.withValues(alpha: 0.55),
+                                        PloyColors.fromWhiteAlpha(0.55),
                                   ),
                             ),
                           ],

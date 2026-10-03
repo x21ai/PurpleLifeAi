@@ -9,6 +9,7 @@ import '../shared/glass_helpers.dart';
 import '../shared/loading_skeleton.dart';
 import '../shared/score_arc.dart';
 import 'risk_forecast_repository.dart';
+import '../../design/ploy_colors.dart';
 
 ScoreArcTone _bandTone(String band) {
   return switch (band) {
@@ -30,8 +31,8 @@ ScoreArcTone _bandTone(String band) {
       return (bg: warn.withValues(alpha: 0.15), fg: warn);
     default:
       return (
-        bg: Colors.white.withValues(alpha: 0.08),
-        fg: Colors.white.withValues(alpha: 0.8),
+        bg: PloyColors.fromWhiteAlpha(0.08),
+        fg: PloyColors.fromWhiteAlpha(0.8),
       );
   }
 }
@@ -52,7 +53,7 @@ class TodayRiskScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tokens = PurpleTokens.loaded;
-    final muted = Colors.white.withValues(alpha: 0.55);
+    final muted = PloyColors.fromWhiteAlpha(0.55);
     final forecastAsync = ref.watch(latestRiskForecastProvider);
 
     return CanvasBackground(
@@ -80,7 +81,7 @@ class TodayRiskScreen extends ConsumerWidget {
                 "TODAY'S READING",
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
                       letterSpacing: 1.2,
-                      color: Colors.white.withValues(alpha: 0.45),
+                      color: PloyColors.fromWhiteAlpha(0.45),
                     ),
               ),
               const SizedBox(height: 12),
@@ -90,7 +91,7 @@ class TodayRiskScreen extends ConsumerWidget {
                       fontFamily: PurpleType.serif,
                       fontSize: 44,
                       height: 1.02,
-                      color: Colors.white.withValues(alpha: 0.95),
+                      color: PloyColors.fromWhiteAlpha(0.95),
                     ),
               ),
               const SizedBox(height: 24),
@@ -122,7 +123,7 @@ class TodayRiskScreen extends ConsumerWidget {
                             'No reading yet',
                             style: PurpleType.serifStyle(
                               fontSize: 22,
-                              color: Colors.white.withValues(alpha: 0.95),
+                              color: PloyColors.fromWhiteAlpha(0.95),
                             ),
                           ),
                           const SizedBox(height: 8),
@@ -155,7 +156,7 @@ class _ForecastBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final muted = Colors.white.withValues(alpha: 0.55);
+    final muted = PloyColors.fromWhiteAlpha(0.55);
     final readiness = forecast.readinessScore.toDouble();
     final tone = _bandTone(forecast.band);
 
@@ -188,7 +189,7 @@ class _ForecastBody extends StatelessWidget {
                           style: PurpleType.serifStyle(
                             fontSize: 88,
                             height: 1,
-                            color: Colors.white.withValues(alpha: 0.95),
+                            color: PloyColors.fromWhiteAlpha(0.95),
                           ),
                         ),
                         Text(
@@ -235,7 +236,7 @@ class _ForecastBody extends StatelessWidget {
                   style: PurpleType.serifStyle(
                     fontSize: 22,
                     height: 1.35,
-                    color: Colors.white.withValues(alpha: 0.95),
+                    color: PloyColors.fromWhiteAlpha(0.95),
                   ),
                 ),
               ],
@@ -247,7 +248,7 @@ class _ForecastBody extends StatelessWidget {
           "WHAT'S SHIFTING",
           style: Theme.of(context).textTheme.labelSmall?.copyWith(
                 letterSpacing: 1.2,
-                color: Colors.white.withValues(alpha: 0.45),
+                color: PloyColors.fromWhiteAlpha(0.45),
               ),
         ),
         const SizedBox(height: 12),
@@ -279,7 +280,7 @@ class _ForecastBody extends StatelessWidget {
                                 factor.label,
                                 style: PurpleType.serifStyle(
                                   fontSize: 18,
-                                  color: Colors.white.withValues(alpha: 0.95),
+                                  color: PloyColors.fromWhiteAlpha(0.95),
                                 ),
                               ),
                               const SizedBox(height: 4),
@@ -315,7 +316,7 @@ class _ForecastBody extends StatelessWidget {
             'Model ${forecast.modelVersion ?? 'unknown'} · computed ${DateFormat('MMM d, h:mm a').format(forecast.computedAt!)}',
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.4),
+                  color: PloyColors.fromWhiteAlpha(0.4),
                 ),
           ),
         ],

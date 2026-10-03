@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../shared/glass_helpers.dart';
 import 'chat_repository.dart';
+import '../../design/ploy_colors.dart';
 
 enum ProposalStatus { pending, confirmed, cancelled, failed }
 
@@ -61,7 +62,7 @@ class ActionConfirmCard extends StatelessWidget {
                 Text(
                   proposal.summary,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.92),
+                        color: PloyColors.fromWhiteAlpha(0.92),
                         height: 1.4,
                       ),
                 ),
@@ -73,13 +74,13 @@ class ActionConfirmCard extends StatelessWidget {
                       child: RichText(
                         text: TextSpan(
                           style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                color: Colors.white.withValues(alpha: 0.6),
+                                color: PloyColors.fromWhiteAlpha(0.6),
                               ),
                           children: [
                             TextSpan(
                               text: '${entry.key}: ',
                               style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.8),
+                                color: PloyColors.fromWhiteAlpha(0.8),
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -112,7 +113,7 @@ class ActionConfirmCard extends StatelessWidget {
                         onPressed: busy ? null : onCancel,
                         style: TextButton.styleFrom(
                           minimumSize: const Size(64, 44),
-                          foregroundColor: Colors.white.withValues(alpha: 0.7),
+                          foregroundColor: PloyColors.fromWhiteAlpha(0.7),
                         ),
                         child: const Text('Cancel'),
                       ),
@@ -140,7 +141,7 @@ class ActionConfirmCard extends StatelessWidget {
         return Text(
           'Cancelled',
           style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: Colors.white.withValues(alpha: 0.5),
+                color: PloyColors.fromWhiteAlpha(0.5),
               ),
         );
       case ProposalStatus.failed:

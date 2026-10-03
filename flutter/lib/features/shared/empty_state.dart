@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../design/purple_type.dart';
 import 'glass_helpers.dart';
+import '../../design/ploy_colors.dart';
 
 /// Calm empty state card with glass styling. No fake health data.
 class EmptyState extends StatelessWidget {
@@ -59,7 +60,7 @@ class EmptyState extends StatelessWidget {
                 eyebrow.toUpperCase(),
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
                       letterSpacing: 1.2,
-                      color: Colors.white.withValues(alpha: 0.55),
+                      color: PloyColors.fromWhiteAlpha(0.55),
                     ),
               ),
               const SizedBox(height: 16),
@@ -68,14 +69,14 @@ class EmptyState extends StatelessWidget {
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       fontFamily: PurpleType.serif,
                       height: 1.05,
-                      color: Colors.white.withValues(alpha: 0.95),
+                      color: PloyColors.fromWhiteAlpha(0.95),
                     ),
               ),
               const SizedBox(height: 12),
               Text(
                 body,
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.75),
+                      color: PloyColors.fromWhiteAlpha(0.75),
                       height: 1.5,
                     ),
               ),
@@ -100,7 +101,7 @@ class EmptyState extends StatelessWidget {
                         child: Text(
                           secondaryActionLabel!,
                           style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.55),
+                            color: PloyColors.fromWhiteAlpha(0.55),
                             decoration: TextDecoration.underline,
                           ),
                         ),

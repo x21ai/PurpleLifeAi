@@ -11,6 +11,7 @@ import 'models/report_row.dart';
 import 'reports_repository.dart';
 import 'widgets/reports_layout.dart';
 import 'widgets/trend_chart.dart';
+import '../../design/ploy_colors.dart';
 
 /// Lab metric trends hub mirroring web `/reports/metrics`.
 class ReportsMetricsScreen extends ConsumerWidget {
@@ -53,7 +54,7 @@ class ReportsMetricsScreen extends ConsumerWidget {
               Text(
                 '${metrics.length} tracked metric${metrics.length == 1 ? '' : 's'} from your uploads.',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.55),
+                      color: PloyColors.fromWhiteAlpha(0.55),
                     ),
               ),
               const SizedBox(height: 16),
@@ -80,7 +81,7 @@ class ReportsMetricsScreen extends ConsumerWidget {
                                     .titleSmall
                                     ?.copyWith(
                                       color:
-                                          Colors.white.withValues(alpha: 0.95),
+                                          PloyColors.fromWhiteAlpha(0.95),
                                     ),
                               ),
                               const SizedBox(height: 4),
@@ -91,7 +92,7 @@ class ReportsMetricsScreen extends ConsumerWidget {
                                     .bodySmall
                                     ?.copyWith(
                                       color:
-                                          Colors.white.withValues(alpha: 0.6),
+                                          PloyColors.fromWhiteAlpha(0.6),
                                     ),
                               ),
                             ],
@@ -101,7 +102,7 @@ class ReportsMetricsScreen extends ConsumerWidget {
                         const SizedBox(width: 8),
                         Icon(
                           Icons.chevron_right,
-                          color: Colors.white.withValues(alpha: 0.4),
+                          color: PloyColors.fromWhiteAlpha(0.4),
                         ),
                       ],
                     ),

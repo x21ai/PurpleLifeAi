@@ -9,6 +9,7 @@ import '../shared/glass_helpers.dart' show ContentColumn;
 import 'meds_repository.dart';
 import 'meds_style.dart';
 import 'models/medication.dart';
+import '../../design/ploy_colors.dart';
 
 /// Bottom sheet to update `medications.pills_remaining` after a refill.
 ///
@@ -107,7 +108,7 @@ class _MedRefillSheetState extends ConsumerState<MedRefillSheet> {
                   width: 36,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.25),
+                    color: PloyColors.fromWhiteAlpha(0.25),
                     borderRadius: BorderRadius.circular(999),
                   ),
                 ),
@@ -160,7 +161,7 @@ class _MedRefillSheetState extends ConsumerState<MedRefillSheet> {
                   hintText: '30',
                   hintStyle: medsSans(fontSize: 18, color: p.textTertiary),
                   filled: true,
-                  fillColor: Colors.white.withValues(alpha: 0.06),
+                  fillColor: PloyColors.fromWhiteAlpha(0.06),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
                     borderSide: BorderSide(color: p.divider),

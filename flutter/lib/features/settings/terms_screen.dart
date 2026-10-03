@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../design/purple_type.dart';
 import '../../shell/routes.dart';
 import '../shared/glass_helpers.dart';
+import '../../design/ploy_colors.dart';
 
 /// In-app terms copy ported from web `settings.terms.tsx`.
 class TermsScreen extends StatelessWidget {
@@ -46,7 +47,7 @@ class TermsScreen extends StatelessWidget {
                       child: IconButton(
                         onPressed: () => context.go(AppRoutes.settings),
                         icon: const Icon(Icons.close_rounded, size: 20),
-                        color: Colors.white.withValues(alpha: 0.6),
+                        color: PloyColors.fromWhiteAlpha(0.6),
                         tooltip: 'Close',
                         constraints:
                             const BoxConstraints(minWidth: 44, minHeight: 44),
@@ -56,7 +57,7 @@ class TermsScreen extends StatelessWidget {
                       'Terms',
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.95),
+                            color: PloyColors.fromWhiteAlpha(0.95),
                           ),
                     ),
                   ],
@@ -74,7 +75,7 @@ class TermsScreen extends StatelessWidget {
                         _paragraphs[i],
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                               fontFamily: PurpleType.serif,
-                              color: Colors.white.withValues(alpha: 0.7),
+                              color: PloyColors.fromWhiteAlpha(0.7),
                               height: 1.5,
                             ),
                       ),

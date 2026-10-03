@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/providers/core_providers.dart';
 import '../../shell/routes.dart';
 import 'wearable_oauth.dart';
+import '../../design/ploy_colors.dart';
 
 /// Handles OAuth callback routes for Oura and Whoop (web and universal fallback).
 class WearableOAuthCallbackScreen extends ConsumerStatefulWidget {
@@ -65,7 +66,7 @@ class _WearableOAuthCallbackScreenState
         : 'Whoop';
 
     return Scaffold(
-      backgroundColor: const Color(0xFF120A18),
+      backgroundColor: PloyColors.canvas,
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -76,8 +77,7 @@ class _WearableOAuthCallbackScreenState
                 _error ? "We couldn't connect" : title,
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontFamily: 'Georgia',
-                      color: Colors.white.withValues(alpha: 0.95),
+                      color: PloyColors.ink,
                     ),
               ),
               const SizedBox(height: 12),
@@ -85,7 +85,7 @@ class _WearableOAuthCallbackScreenState
                 _message,
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.65),
+                      color: PloyColors.fromWhiteAlpha(0.65),
                       height: 1.4,
                     ),
               ),

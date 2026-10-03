@@ -10,6 +10,7 @@ import '../reports/reports_repository.dart';
 import '../shared/glass_helpers.dart';
 import '../today/today_repository.dart';
 import 'recommended_catalog.dart';
+import '../../design/ploy_colors.dart';
 
 /// Plan tab: Protocol | Recommended segmented sub-nav (Merged preview parity).
 class PlanScreen extends ConsumerStatefulWidget {
@@ -57,7 +58,7 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
                   'PLAN',
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
                         letterSpacing: 1.4,
-                        color: Colors.white.withValues(alpha: 0.55),
+                        color: PloyColors.fromWhiteAlpha(0.55),
                       ),
                 ),
                 const SizedBox(height: 12),
@@ -68,7 +69,7 @@ class _PlanScreenState extends ConsumerState<PlanScreen> {
                   style: PurpleType.serifStyle(
                     fontSize: 32,
                     height: 1.05,
-                    color: Colors.white.withValues(alpha: 0.95),
+                    color: PloyColors.fromWhiteAlpha(0.95),
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -142,7 +143,7 @@ class _SegmentPill extends StatelessWidget {
     return Material(
       color: selected
           ? activeColor.withValues(alpha: 0.2)
-          : Colors.white.withValues(alpha: 0.06),
+          : PloyColors.fromWhiteAlpha(0.06),
       borderRadius: BorderRadius.circular(999),
       child: InkWell(
         onTap: onTap,
@@ -156,8 +157,8 @@ class _SegmentPill extends StatelessWidget {
                 label,
                 style: Theme.of(context).textTheme.labelMedium?.copyWith(
                       color: selected
-                          ? Colors.white.withValues(alpha: 0.95)
-                          : Colors.white.withValues(alpha: 0.55),
+                          ? PloyColors.fromWhiteAlpha(0.95)
+                          : PloyColors.fromWhiteAlpha(0.55),
                       fontWeight:
                           selected ? FontWeight.w600 : FontWeight.w500,
                     ),
@@ -208,7 +209,7 @@ class _ProtocolSegment extends ConsumerWidget {
               Text(
                 result.headline!.trim(),
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.75),
+                      color: PloyColors.fromWhiteAlpha(0.75),
                       height: 1.45,
                     ),
               ),
@@ -241,14 +242,14 @@ class _ProtocolEmpty extends StatelessWidget {
           Icon(
             Icons.checklist_rtl_outlined,
             size: 20,
-            color: Colors.white.withValues(alpha: 0.45),
+            color: PloyColors.fromWhiteAlpha(0.45),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
               message,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.7),
+                    color: PloyColors.fromWhiteAlpha(0.7),
                     height: 1.5,
                   ),
             ),
@@ -290,7 +291,7 @@ class _ProtocolCard extends StatelessWidget {
               style: PurpleType.sansStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
-                color: Colors.white.withValues(alpha: 0.92),
+                color: PloyColors.fromWhiteAlpha(0.92),
               ),
             ),
           ),
@@ -302,7 +303,7 @@ class _ProtocolCard extends StatelessWidget {
                 Text(
                   card.title,
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.92),
+                        color: PloyColors.fromWhiteAlpha(0.92),
                         fontWeight: FontWeight.w600,
                       ),
                 ),
@@ -310,7 +311,7 @@ class _ProtocolCard extends StatelessWidget {
                 Text(
                   card.body,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.7),
+                        color: PloyColors.fromWhiteAlpha(0.7),
                         height: 1.45,
                       ),
                 ),
@@ -361,7 +362,7 @@ class _RecommendedSegment extends ConsumerWidget {
         child: Text(
           'Set your focus conditions in Account to unlock personalized recommendations.',
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.white.withValues(alpha: 0.7),
+                color: PloyColors.fromWhiteAlpha(0.7),
                 height: 1.5,
               ),
         ),
@@ -424,14 +425,14 @@ class _RecommendedCard extends StatelessWidget {
                       item.category.toUpperCase(),
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
                             letterSpacing: 1.1,
-                            color: Colors.white.withValues(alpha: 0.45),
+                            color: PloyColors.fromWhiteAlpha(0.45),
                           ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       item.title,
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.92),
+                            color: PloyColors.fromWhiteAlpha(0.92),
                             fontWeight: FontWeight.w600,
                           ),
                     ),
@@ -445,7 +446,7 @@ class _RecommendedCard extends StatelessWidget {
             Text(
               item.disclaimer!,
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.45),
+                    color: PloyColors.fromWhiteAlpha(0.45),
                     height: 1.35,
                   ),
             ),
@@ -457,7 +458,7 @@ class _RecommendedCard extends StatelessWidget {
               onPressed: () => context.go(item.route),
               style: FilledButton.styleFrom(
                 backgroundColor: purple.withValues(alpha: 0.18),
-                foregroundColor: Colors.white.withValues(alpha: 0.92),
+                foregroundColor: PloyColors.fromWhiteAlpha(0.92),
               ),
               child: Text(item.cta),
             ),

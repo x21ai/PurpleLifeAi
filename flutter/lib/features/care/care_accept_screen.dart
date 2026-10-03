@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../design/purple_theme.dart';
 import '../../shell/routes.dart';
 import 'care_repository.dart';
+import '../../design/ploy_colors.dart';
 
 /// In-app caregiver-invite accept handler.
 ///
@@ -74,7 +75,7 @@ class _CareAcceptScreenState extends ConsumerState<CareAcceptScreen> {
                 'Caregiver invite',
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
                       letterSpacing: 1.2,
-                      color: Colors.white.withValues(alpha: 0.55),
+                      color: PloyColors.fromWhiteAlpha(0.55),
                     ),
               ),
               const SizedBox(height: 8),
@@ -82,7 +83,7 @@ class _CareAcceptScreenState extends ConsumerState<CareAcceptScreen> {
                 'Join their circle',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.95),
+                      color: PloyColors.fromWhiteAlpha(0.95),
                     ),
               ),
               const SizedBox(height: 16),
@@ -99,7 +100,7 @@ class _CareAcceptScreenState extends ConsumerState<CareAcceptScreen> {
                 Text(
                   'Accepting your invite…',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.7),
+                        color: PloyColors.fromWhiteAlpha(0.7),
                       ),
                 ),
               ] else ...[
@@ -107,7 +108,7 @@ class _CareAcceptScreenState extends ConsumerState<CareAcceptScreen> {
                   _message,
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.8),
+                        color: PloyColors.fromWhiteAlpha(0.8),
                       ),
                 ),
                 const SizedBox(height: 20),

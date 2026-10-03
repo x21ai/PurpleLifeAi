@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import '../../design/ploy_colors.dart';
 
 /// Curved score arc mirroring web `ScoreArc` (lower 200° of a circle).
 enum ScoreArcTone { ink, alert, cream }
@@ -59,8 +60,8 @@ class _ScoreArcPainter extends CustomPainter {
   Color _fillColor() {
     return switch (tone) {
       ScoreArcTone.alert => const Color(0xFFB8453A),
-      ScoreArcTone.cream => const Color(0xFFF2F2F5),
-      ScoreArcTone.ink => const Color(0xFFF2F2F5),
+      ScoreArcTone.cream => PloyColors.ink,
+      ScoreArcTone.ink => PloyColors.ink,
     };
   }
 
@@ -86,7 +87,7 @@ class _ScoreArcPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = stroke
       ..strokeCap = StrokeCap.round
-      ..color = Colors.white.withValues(alpha: 0.18);
+      ..color = PloyColors.fromWhiteAlpha(0.18);
 
     canvas.drawPath(trackPath, trackPaint);
 
@@ -109,7 +110,7 @@ class _ScoreArcPainter extends CustomPainter {
       endPoint,
       stroke * 0.9,
       Paint()
-        ..color = const Color(0xFF0A0710)
+        ..color = PloyColors.canvas
         ..style = PaintingStyle.fill,
     );
     canvas.drawCircle(

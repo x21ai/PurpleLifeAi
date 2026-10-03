@@ -16,6 +16,7 @@ import '../vitals/synced_data_panel.dart';
 import '../vitals/vitals_repository.dart';
 import 'condition_catalog.dart';
 import 'my_health_repository.dart';
+import '../../design/ploy_colors.dart';
 
 /// Long-view health summary mirroring web `/my-health`: narrative, synced
 /// metric rows, wearable coverage, and links into vitals drilldowns.
@@ -96,13 +97,13 @@ class MyHealthScreen extends ConsumerWidget {
                                   .textTheme
                                   .bodyMedium
                                   ?.copyWith(
-                                    color: Colors.white.withValues(alpha: 0.55),
+                                    color: PloyColors.fromWhiteAlpha(0.55),
                                   ),
                             ),
                             Icon(
                               Icons.chevron_right,
                               size: 16,
-                              color: Colors.white.withValues(alpha: 0.55),
+                              color: PloyColors.fromWhiteAlpha(0.55),
                             ),
                           ],
                         ),
@@ -176,7 +177,7 @@ class MyHealthScreen extends ConsumerWidget {
                         children: [
                           Icon(
                             Icons.bar_chart_outlined,
-                            color: Colors.white.withValues(alpha: 0.75),
+                            color: PloyColors.fromWhiteAlpha(0.75),
                           ),
                           const SizedBox(width: 12),
                           Expanded(
@@ -189,7 +190,7 @@ class MyHealthScreen extends ConsumerWidget {
                                       .textTheme
                                       .titleSmall
                                       ?.copyWith(
-                                        color: Colors.white.withValues(alpha: 0.95),
+                                        color: PloyColors.fromWhiteAlpha(0.95),
                                         fontWeight: FontWeight.w600,
                                       ),
                                 ),
@@ -199,7 +200,7 @@ class MyHealthScreen extends ConsumerWidget {
                                       .textTheme
                                       .bodySmall
                                       ?.copyWith(
-                                        color: Colors.white.withValues(alpha: 0.55),
+                                        color: PloyColors.fromWhiteAlpha(0.55),
                                       ),
                                 ),
                               ],
@@ -208,7 +209,7 @@ class MyHealthScreen extends ConsumerWidget {
                           Icon(
                             Icons.chevron_right,
                             size: 18,
-                            color: Colors.white.withValues(alpha: 0.4),
+                            color: PloyColors.fromWhiteAlpha(0.4),
                           ),
                         ],
                       ),
@@ -224,7 +225,7 @@ class MyHealthScreen extends ConsumerWidget {
                       Text(
                         'Showing cached readings (offline)',
                         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                              color: Colors.white.withValues(alpha: 0.45),
+                              color: PloyColors.fromWhiteAlpha(0.45),
                             ),
                       ),
                     ],
@@ -262,7 +263,7 @@ class _HeaderBar extends StatelessWidget {
             icon: Icon(
               Icons.info_outline,
               size: 18,
-              color: Colors.white.withValues(alpha: 0.55),
+              color: PloyColors.fromWhiteAlpha(0.55),
             ),
           ),
           Expanded(
@@ -270,7 +271,7 @@ class _HeaderBar extends StatelessWidget {
               'My Body',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.92),
+                    color: PloyColors.fromWhiteAlpha(0.92),
                     fontWeight: FontWeight.w600,
                   ),
             ),
@@ -281,7 +282,7 @@ class _HeaderBar extends StatelessWidget {
             icon: Icon(
               Icons.devices_outlined,
               size: 20,
-              color: Colors.white.withValues(alpha: 0.55),
+              color: PloyColors.fromWhiteAlpha(0.55),
             ),
           ),
         ],
@@ -329,7 +330,7 @@ class _HealthSectionRow extends StatelessWidget {
                     ],
                   ),
                 ),
-                child: Icon(icon, size: 22, color: Colors.white.withValues(alpha: 0.9)),
+                child: Icon(icon, size: 22, color: PloyColors.fromWhiteAlpha(0.9)),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -339,7 +340,7 @@ class _HealthSectionRow extends StatelessWidget {
                     Text(
                       title,
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.95),
+                            color: PloyColors.fromWhiteAlpha(0.95),
                             fontWeight: FontWeight.w600,
                           ),
                     ),
@@ -347,7 +348,7 @@ class _HealthSectionRow extends StatelessWidget {
                     Text(
                       subtitle,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.55),
+                            color: PloyColors.fromWhiteAlpha(0.55),
                           ),
                     ),
                   ],
@@ -356,7 +357,7 @@ class _HealthSectionRow extends StatelessWidget {
               Icon(
                 Icons.chevron_right,
                 size: 18,
-                color: Colors.white.withValues(alpha: 0.4),
+                color: PloyColors.fromWhiteAlpha(0.4),
               ),
             ],
           ),
@@ -367,7 +368,7 @@ class _HealthSectionRow extends StatelessWidget {
 }
 
 Widget _sectionDivider() {
-  return Divider(height: 1, color: Colors.white.withValues(alpha: 0.08));
+  return Divider(height: 1, color: PloyColors.fromWhiteAlpha(0.08));
 }
 
 class _StepAverageCard extends StatelessWidget {
@@ -406,7 +407,7 @@ class _StepAverageCard extends StatelessWidget {
             'STEP AVERAGE',
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
                   letterSpacing: 1.2,
-                  color: Colors.white.withValues(alpha: 0.45),
+                  color: PloyColors.fromWhiteAlpha(0.45),
                 ),
           ),
           const SizedBox(height: 8),
@@ -419,14 +420,14 @@ class _StepAverageCard extends StatelessWidget {
                     fontFamily: PurpleType.serif,
                     fontSize: 48,
                     height: 1,
-                    color: Colors.white.withValues(alpha: 0.95),
+                    color: PloyColors.fromWhiteAlpha(0.95),
                   ),
               children: hasSteps
                   ? [
                       TextSpan(
                         text: ' steps / day',
                         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                              color: Colors.white.withValues(alpha: 0.55),
+                              color: PloyColors.fromWhiteAlpha(0.55),
                             ),
                       ),
                     ]
@@ -439,7 +440,7 @@ class _StepAverageCard extends StatelessWidget {
                 ? 'Daily steps naturally dip sometimes. Focus on the long haul and move when it fits your schedule.'
                 : 'Connect a device or keep logging activity to see your step averages here.',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.65),
+                  color: PloyColors.fromWhiteAlpha(0.65),
                   height: 1.45,
                   fontFamily: PurpleType.serif,
                 ),
@@ -498,13 +499,13 @@ class _ProgressLine extends StatelessWidget {
             Text(
               label,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.55),
+                    color: PloyColors.fromWhiteAlpha(0.55),
                   ),
             ),
             Text(
               right,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.85),
+                    color: PloyColors.fromWhiteAlpha(0.85),
                   ),
             ),
           ],
@@ -515,7 +516,7 @@ class _ProgressLine extends StatelessWidget {
           child: LinearProgressIndicator(
             value: pct,
             minHeight: 6,
-            backgroundColor: Colors.white.withValues(alpha: 0.08),
+            backgroundColor: PloyColors.fromWhiteAlpha(0.08),
             color: warn,
           ),
         ),
@@ -541,7 +542,7 @@ class _ConditionsSection extends StatelessWidget {
           'YOUR CONDITIONS',
           style: Theme.of(context).textTheme.labelSmall?.copyWith(
                 letterSpacing: 1.2,
-                color: Colors.white.withValues(alpha: 0.45),
+                color: PloyColors.fromWhiteAlpha(0.45),
               ),
         ),
         const SizedBox(height: 12),
@@ -591,7 +592,7 @@ class _ConditionTile extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.95),
+                        color: PloyColors.fromWhiteAlpha(0.95),
                         fontWeight: FontWeight.w500,
                       ),
                 ),
@@ -600,7 +601,7 @@ class _ConditionTile extends StatelessWidget {
                   conditionCategoryLabel(entry.category).toUpperCase(),
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
                         letterSpacing: 1.0,
-                        color: Colors.white.withValues(alpha: 0.45),
+                        color: PloyColors.fromWhiteAlpha(0.45),
                       ),
                 ),
               ],
@@ -645,7 +646,7 @@ class _DnaInsightsCard extends StatelessWidget {
                 Text(
                   'DNA insights (optional)',
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.95),
+                        color: PloyColors.fromWhiteAlpha(0.95),
                         fontWeight: FontWeight.w600,
                       ),
                 ),
@@ -653,7 +654,7 @@ class _DnaInsightsCard extends StatelessWidget {
                 Text(
                   'Upload a raw file. We look at a small, curated set, never your whole genome.',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.55),
+                        color: PloyColors.fromWhiteAlpha(0.55),
                         height: 1.4,
                       ),
                 ),
@@ -681,14 +682,14 @@ class _LoadError extends StatelessWidget {
           Text(
             'Could not load My Body',
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.95),
+                  color: PloyColors.fromWhiteAlpha(0.95),
                 ),
           ),
           const SizedBox(height: 8),
           Text(
             'Pull to refresh or retry in a moment.',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.65),
+                  color: PloyColors.fromWhiteAlpha(0.65),
                 ),
           ),
           const SizedBox(height: 16),

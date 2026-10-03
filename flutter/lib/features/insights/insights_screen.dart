@@ -17,6 +17,7 @@ import '../today/today_repository.dart';
 import '../vitals/vitals_repository.dart';
 import 'ai_insights_repository.dart';
 import 'insights_widgets.dart';
+import '../../design/ploy_colors.dart';
 
 /// Patterns hub mirroring web `/insights`: narrative header, observation
 /// cards, wearable trends, latest vitals, health-record counts, and tabbed
@@ -127,7 +128,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                 Text(
                   'Observations only, never a diagnosis. Share with your clinician for context.',
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.45),
+                        color: PloyColors.fromWhiteAlpha(0.45),
                         fontSize: 11,
                       ),
                 ),
@@ -161,7 +162,7 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                       child: Text(
                         'All reports',
                         style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.55),
+                          color: PloyColors.fromWhiteAlpha(0.55),
                           fontSize: 12,
                         ),
                       ),
@@ -178,10 +179,10 @@ class _InsightsScreenState extends ConsumerState<InsightsScreen>
                   controller: tabController,
                   isScrollable: true,
                   tabAlignment: TabAlignment.start,
-                  labelColor: Colors.white.withValues(alpha: 0.95),
-                  unselectedLabelColor: Colors.white.withValues(alpha: 0.55),
+                  labelColor: PloyColors.fromWhiteAlpha(0.95),
+                  unselectedLabelColor: PloyColors.fromWhiteAlpha(0.55),
                   indicatorColor: Theme.of(context).colorScheme.primary,
-                  dividerColor: Colors.white.withValues(alpha: 0.08),
+                  dividerColor: PloyColors.fromWhiteAlpha(0.08),
                   tabs: [
                     if (tracksSeizures) const Tab(text: 'Seizures'),
                     const Tab(text: 'Trends'),
@@ -252,7 +253,7 @@ class _NoticingCards extends StatelessWidget {
               Text(
                 result.headline!.trim(),
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.75),
+                      color: PloyColors.fromWhiteAlpha(0.75),
                       height: 1.4,
                     ),
               ),
@@ -305,14 +306,14 @@ class _NoticingEmptyCard extends StatelessWidget {
           Icon(
             Icons.auto_awesome_outlined,
             size: 18,
-            color: Colors.white.withValues(alpha: 0.45),
+            color: PloyColors.fromWhiteAlpha(0.45),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
               message,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.65),
+                    color: PloyColors.fromWhiteAlpha(0.65),
                     height: 1.5,
                   ),
             ),
@@ -356,7 +357,7 @@ class _NoticingCardTile extends StatelessWidget {
                 Text(
                   card.title,
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.92),
+                        color: PloyColors.fromWhiteAlpha(0.92),
                         fontWeight: FontWeight.w600,
                       ),
                 ),
@@ -364,7 +365,7 @@ class _NoticingCardTile extends StatelessWidget {
                 Text(
                   card.body,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.65),
+                        color: PloyColors.fromWhiteAlpha(0.65),
                         height: 1.4,
                       ),
                 ),
@@ -454,15 +455,15 @@ class _VitalsCaption extends StatelessWidget {
           'From your connected wearable. Weight, blood pressure, and glucose live '
           'on the web app and in Vitals.',
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Colors.white.withValues(alpha: 0.55),
+                color: PloyColors.fromWhiteAlpha(0.55),
               ),
         ),
         const SizedBox(height: 12),
         OutlinedButton(
           onPressed: onOpenVitals,
           style: OutlinedButton.styleFrom(
-            foregroundColor: Colors.white.withValues(alpha: 0.85),
-            side: BorderSide(color: Colors.white.withValues(alpha: 0.15)),
+            foregroundColor: PloyColors.fromWhiteAlpha(0.85),
+            side: BorderSide(color: PloyColors.fromWhiteAlpha(0.15)),
             shape: const StadiumBorder(),
           ),
           child: const Text('Open Vitals'),
@@ -502,7 +503,7 @@ class _HealthRecordsSection extends StatelessWidget {
       error: (_, __) => Text(
         'Could not load your records right now.',
         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Colors.white.withValues(alpha: 0.55),
+              color: PloyColors.fromWhiteAlpha(0.55),
             ),
       ),
       data: (data) {
@@ -606,7 +607,7 @@ class _SeizuresTab extends StatelessWidget {
                   'Last 90 days',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontFamily: PurpleType.serif,
-                        color: Colors.white.withValues(alpha: 0.9),
+                        color: PloyColors.fromWhiteAlpha(0.9),
                       ),
                 ),
                 OutlinedButton.icon(
@@ -614,9 +615,9 @@ class _SeizuresTab extends StatelessWidget {
                   icon: const Icon(Icons.add, size: 16),
                   label: const Text('Log'),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.white.withValues(alpha: 0.85),
+                    foregroundColor: PloyColors.fromWhiteAlpha(0.85),
                     side:
-                        BorderSide(color: Colors.white.withValues(alpha: 0.15)),
+                        BorderSide(color: PloyColors.fromWhiteAlpha(0.15)),
                     shape: const StadiumBorder(),
                     padding: const EdgeInsets.symmetric(horizontal: 14),
                   ),
@@ -630,7 +631,7 @@ class _SeizuresTab extends StatelessWidget {
               'All events',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontFamily: PurpleType.serif,
-                    color: Colors.white.withValues(alpha: 0.9),
+                    color: PloyColors.fromWhiteAlpha(0.9),
                   ),
             ),
             const SizedBox(height: 12),
@@ -660,13 +661,13 @@ class _SeizuresEmpty extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.bolt_outlined, color: Colors.white.withValues(alpha: 0.45)),
+          Icon(Icons.bolt_outlined, color: PloyColors.fromWhiteAlpha(0.45)),
           const SizedBox(height: 8),
           Text(
             'No events logged.',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontFamily: PurpleType.serif,
-                  color: Colors.white.withValues(alpha: 0.9),
+                  color: PloyColors.fromWhiteAlpha(0.9),
                 ),
           ),
           const SizedBox(height: 4),
@@ -674,7 +675,7 @@ class _SeizuresEmpty extends StatelessWidget {
             'When something happens, log it. It only takes a tap.',
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.55),
+                  color: PloyColors.fromWhiteAlpha(0.55),
                 ),
           ),
           const SizedBox(height: 16),
@@ -723,15 +724,15 @@ class _TrendsTab extends StatelessWidget {
               'Connect a wearable to start seeing your trends.',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.65),
+                    color: PloyColors.fromWhiteAlpha(0.65),
                   ),
             ),
             const SizedBox(height: 16),
             OutlinedButton(
               onPressed: onConnect,
               style: OutlinedButton.styleFrom(
-                foregroundColor: Colors.white.withValues(alpha: 0.85),
-                side: BorderSide(color: Colors.white.withValues(alpha: 0.15)),
+                foregroundColor: PloyColors.fromWhiteAlpha(0.85),
+                side: BorderSide(color: PloyColors.fromWhiteAlpha(0.15)),
                 shape: const StadiumBorder(),
               ),
               child: const Text('Open Tools'),
@@ -767,14 +768,14 @@ class _PatternsWebOnlyTab extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(Icons.auto_awesome_outlined,
-              color: Colors.white.withValues(alpha: 0.45)),
+              color: PloyColors.fromWhiteAlpha(0.45)),
           const SizedBox(height: 8),
           Text(
             'Patterns are computed on the web',
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontFamily: PurpleType.serif,
-                  color: Colors.white.withValues(alpha: 0.9),
+                  color: PloyColors.fromWhiteAlpha(0.9),
                 ),
           ),
           const SizedBox(height: 4),
@@ -783,7 +784,7 @@ class _PatternsWebOnlyTab extends StatelessWidget {
             'web app. Keep logging and open Insights there to see your patterns.',
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.55),
+                  color: PloyColors.fromWhiteAlpha(0.55),
                   height: 1.45,
                 ),
           ),
@@ -810,8 +811,8 @@ class _TrendsSummaryRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 24),
       decoration: BoxDecoration(
         border: Border(
-          top: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
-          bottom: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
+          top: BorderSide(color: PloyColors.fromWhiteAlpha(0.08)),
+          bottom: BorderSide(color: PloyColors.fromWhiteAlpha(0.08)),
         ),
       ),
       child: Column(
@@ -830,7 +831,7 @@ class _TrendsSummaryRow extends StatelessWidget {
             'Last 14 nights · from your connected ring',
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
                   letterSpacing: 1.1,
-                  color: Colors.white.withValues(alpha: 0.45),
+                  color: PloyColors.fromWhiteAlpha(0.45),
                 ),
           ),
         ],
@@ -854,14 +855,14 @@ class _MetricTile extends StatelessWidget {
           value,
           style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                 fontFamily: PurpleType.serif,
-                color: Colors.white.withValues(alpha: 0.95),
+                color: PloyColors.fromWhiteAlpha(0.95),
               ),
         ),
         const SizedBox(height: 4),
         Text(
           label,
           style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: Colors.white.withValues(alpha: 0.55),
+                color: PloyColors.fromWhiteAlpha(0.55),
               ),
         ),
       ],

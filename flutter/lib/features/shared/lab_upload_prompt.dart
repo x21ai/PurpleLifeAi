@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../design/purple_type.dart';
 import '../../design/tokens.dart';
+import '../../design/ploy_colors.dart';
 
 /// Token-backed empty labs card matching the design preview and Data tab.
 class LabUploadEmptyCard extends StatelessWidget {
@@ -36,7 +37,7 @@ class LabUploadEmptyCard extends StatelessWidget {
             '🧪',
             style: TextStyle(
               fontSize: 32,
-              color: Colors.white.withValues(alpha: 0.7),
+              color: PloyColors.fromWhiteAlpha(0.7),
             ),
           ),
           const SizedBox(height: 8),
@@ -44,7 +45,7 @@ class LabUploadEmptyCard extends StatelessWidget {
             title,
             style: PurpleType.displayStyle(
               fontSize: 16,
-              color: Colors.white.withValues(alpha: 0.95),
+              color: PloyColors.fromWhiteAlpha(0.95),
             ),
           ),
           const SizedBox(height: 6),
@@ -52,7 +53,7 @@ class LabUploadEmptyCard extends StatelessWidget {
             body,
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.55),
+                  color: PloyColors.fromWhiteAlpha(0.55),
                   height: 1.4,
                 ),
           ),

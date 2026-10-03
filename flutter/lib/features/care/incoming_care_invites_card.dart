@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../shell/routes.dart';
 import 'care_repository.dart';
+import '../../design/ploy_colors.dart';
 
 /// Pending care invites addressed to the signed-in user's email.
 class IncomingCareInvitesCard extends ConsumerWidget {
@@ -25,8 +26,8 @@ class IncomingCareInvitesCard extends ConsumerWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0x4DB084D1)),
-        color: const Color(0x14B084D1),
+        border: Border.all(color: PloyColors.line),
+        color: PloyColors.surface,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -36,7 +37,7 @@ class IncomingCareInvitesCard extends ConsumerWidget {
               Icon(
                 Icons.volunteer_activism_outlined,
                 size: 18,
-                color: Colors.white.withValues(alpha: 0.85),
+                color: PloyColors.fromWhiteAlpha(0.85),
               ),
               const SizedBox(width: 8),
               Text(
@@ -44,7 +45,7 @@ class IncomingCareInvitesCard extends ConsumerWidget {
                     ? 'You have a care invitation'
                     : '${invites.length} care invitations',
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.95),
+                      color: PloyColors.fromWhiteAlpha(0.95),
                     ),
               ),
             ],
@@ -144,8 +145,8 @@ class _InviteRowState extends ConsumerState<_InviteRow> {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
-        color: Colors.white.withValues(alpha: 0.04),
+        border: Border.all(color: PloyColors.fromWhiteAlpha(0.12)),
+        color: PloyColors.fromWhiteAlpha(0.04),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -153,7 +154,7 @@ class _InviteRowState extends ConsumerState<_InviteRow> {
           RichText(
             text: TextSpan(
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.85),
+                    color: PloyColors.fromWhiteAlpha(0.85),
                     height: 1.45,
                   ),
               children: [
@@ -172,7 +173,7 @@ class _InviteRowState extends ConsumerState<_InviteRow> {
           Text(
             'Accept to see what they have chosen to share with you.',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.55),
+                  color: PloyColors.fromWhiteAlpha(0.55),
                 ),
           ),
           const SizedBox(height: 12),
@@ -202,7 +203,7 @@ class _InviteRowState extends ConsumerState<_InviteRow> {
                         height: 16,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: Colors.white.withValues(alpha: 0.7),
+                          color: PloyColors.fromWhiteAlpha(0.7),
                         ),
                       )
                     : const Icon(Icons.close, size: 16),

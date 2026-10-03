@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../design/purple_type.dart';
 import '../../design/tokens.dart';
+import '../../design/ploy_colors.dart';
 
 /// Dark-theme token palette for meds routes (Merged preview parity).
 class MedsPalette {
@@ -30,7 +31,7 @@ class MedsPalette {
 }
 
 TextStyle medsEyebrow({Color? color, MedsPalette? palette}) {
-  final c = color ?? palette?.textTertiary ?? Colors.white.withValues(alpha: 0.55);
+  final c = color ?? palette?.textTertiary ?? PloyColors.fromWhiteAlpha(0.55);
   return PurpleType.sansStyle(
     fontSize: 11,
     letterSpacing: 0.88,

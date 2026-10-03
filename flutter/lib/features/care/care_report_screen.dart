@@ -6,6 +6,7 @@ import '../shared/empty_state.dart';
 import '../shared/glass_helpers.dart';
 import '../shared/loading_skeleton.dart';
 import 'care_repository.dart';
+import '../../design/ploy_colors.dart';
 
 /// Read-only caregiver report detail — mirror of web
 /// `care.$ownerId.reports.$reportId.tsx` (`caregiverReadReport`).
@@ -43,11 +44,11 @@ class CareReportScreen extends ConsumerWidget {
                 onPressed: () => context.go('/care/$ownerId'),
                 icon: Icon(
                   Icons.arrow_back,
-                  color: Colors.white.withValues(alpha: 0.55),
+                  color: PloyColors.fromWhiteAlpha(0.55),
                 ),
                 label: Text(
                   'Back to care view',
-                  style: TextStyle(color: Colors.white.withValues(alpha: 0.55)),
+                  style: TextStyle(color: PloyColors.fromWhiteAlpha(0.55)),
                 ),
                 style: TextButton.styleFrom(
                   minimumSize: const Size(0, 44),
@@ -58,7 +59,7 @@ class CareReportScreen extends ConsumerWidget {
                 'CARE · REPORT',
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
                       letterSpacing: 1.2,
-                      color: Colors.white.withValues(alpha: 0.45),
+                      color: PloyColors.fromWhiteAlpha(0.45),
                     ),
               ),
               const SizedBox(height: 8),
@@ -72,7 +73,7 @@ class CareReportScreen extends ConsumerWidget {
                 ),
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       height: 1.04,
-                      color: Colors.white.withValues(alpha: 0.95),
+                      color: PloyColors.fromWhiteAlpha(0.95),
                     ),
               ),
               const SizedBox(height: 24),
@@ -121,7 +122,7 @@ class _ReportDetailBody extends StatelessWidget {
                 'DETAILS',
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
                       letterSpacing: 1.1,
-                      color: Colors.white.withValues(alpha: 0.45),
+                      color: PloyColors.fromWhiteAlpha(0.45),
                     ),
               ),
               const SizedBox(height: 8),
@@ -129,7 +130,7 @@ class _ReportDetailBody extends StatelessWidget {
                 (report['report_date'] as String?) ??
                     ((report['created_at'] as String?) ?? '').split('T').first,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.85),
+                      color: PloyColors.fromWhiteAlpha(0.85),
                     ),
               ),
               if ((report['status'] as String?)?.trim().isNotEmpty == true) ...[
@@ -137,7 +138,7 @@ class _ReportDetailBody extends StatelessWidget {
                 Text(
                   'Status: ${report['status']}',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.55),
+                        color: PloyColors.fromWhiteAlpha(0.55),
                       ),
                 ),
               ],
@@ -146,7 +147,7 @@ class _ReportDetailBody extends StatelessWidget {
                 Text(
                   summary,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.85),
+                        color: PloyColors.fromWhiteAlpha(0.85),
                       ),
                 ),
               ],
@@ -158,7 +159,7 @@ class _ReportDetailBody extends StatelessWidget {
           'METRICS',
           style: Theme.of(context).textTheme.labelSmall?.copyWith(
                 letterSpacing: 1.1,
-                color: Colors.white.withValues(alpha: 0.45),
+                color: PloyColors.fromWhiteAlpha(0.45),
               ),
         ),
         const SizedBox(height: 8),
@@ -166,7 +167,7 @@ class _ReportDetailBody extends StatelessWidget {
           Text(
             'No structured metrics were extracted from this report.',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.5),
+                  color: PloyColors.fromWhiteAlpha(0.5),
                 ),
           )
         else
@@ -182,7 +183,7 @@ class _ReportDetailBody extends StatelessWidget {
                         (metric['display_name'] as String?) ??
                             (metric['metric_key'] as String? ?? 'Metric'),
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Colors.white.withValues(alpha: 0.85),
+                              color: PloyColors.fromWhiteAlpha(0.85),
                             ),
                       ),
                     ),
@@ -192,7 +193,7 @@ class _ReportDetailBody extends StatelessWidget {
                             color: metric['flag'] != null &&
                                     (metric['flag'] as String).isNotEmpty
                                 ? const Color(0xFFE8A6C4)
-                                : Colors.white.withValues(alpha: 0.9),
+                                : PloyColors.fromWhiteAlpha(0.9),
                             fontWeight: FontWeight.w600,
                           ),
                     ),

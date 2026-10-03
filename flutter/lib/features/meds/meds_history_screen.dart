@@ -11,6 +11,7 @@ import 'meds_style.dart';
 import 'meds_today.dart';
 import 'models/dose.dart';
 import 'past_dose_sheet.dart';
+import '../../design/ploy_colors.dart';
 
 /// 30-day dose history with tap-to-edit past doses.
 class MedsHistoryScreen extends ConsumerWidget {
@@ -257,7 +258,7 @@ class _HistoryDoseRow extends StatelessWidget {
       case 'missed':
         return parseTokenColor(colors.destructive);
       case 'skipped':
-        return Colors.white.withValues(alpha: 0.55);
+        return PloyColors.fromWhiteAlpha(0.55);
       default:
         return parseTokenColor(colors.purplePrimary);
     }

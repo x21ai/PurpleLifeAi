@@ -11,6 +11,7 @@ import '../health/apple_health_panel.dart';
 import '../shared/empty_state.dart';
 import '../shared/glass_helpers.dart';
 import '../shared/loading_skeleton.dart';
+import '../../design/ploy_colors.dart';
 
 /// Archived caregiver relationships (owner side), read directly from
 /// `care_relationships` where `archived_at IS NOT NULL`.
@@ -111,11 +112,11 @@ class SharingScreen extends ConsumerWidget {
                   onPressed: () => context.go(AppRoutes.settings),
                   icon: Icon(
                     Icons.arrow_back,
-                    color: Colors.white.withValues(alpha: 0.55),
+                    color: PloyColors.fromWhiteAlpha(0.55),
                   ),
                   label: Text(
                     'Settings',
-                    style: TextStyle(color: Colors.white.withValues(alpha: 0.55)),
+                    style: TextStyle(color: PloyColors.fromWhiteAlpha(0.55)),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -123,7 +124,7 @@ class SharingScreen extends ConsumerWidget {
                   'SHARING',
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
                         letterSpacing: 1.2,
-                        color: Colors.white.withValues(alpha: 0.45),
+                        color: PloyColors.fromWhiteAlpha(0.45),
                       ),
                 ),
                 const SizedBox(height: 8),
@@ -137,14 +138,14 @@ class SharingScreen extends ConsumerWidget {
                         fontFamily: PurpleType.serif,
                         fontSize: 40,
                         height: 1.05,
-                        color: Colors.white.withValues(alpha: 0.95),
+                        color: PloyColors.fromWhiteAlpha(0.95),
                       ),
                 ),
                 const SizedBox(height: 12),
                 Text(
                   'Invite caregivers and manage what they can see.',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.65),
+                        color: PloyColors.fromWhiteAlpha(0.65),
                         height: 1.5,
                       ),
                 ),
@@ -169,7 +170,7 @@ class SharingScreen extends ConsumerWidget {
                   'APPLE HEALTH',
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
                         letterSpacing: 1.2,
-                        color: Colors.white.withValues(alpha: 0.45),
+                        color: PloyColors.fromWhiteAlpha(0.45),
                       ),
                 ),
                 const SizedBox(height: 12),
@@ -203,7 +204,7 @@ class _PendingApprovalsCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.3),
+                color: PloyColors.accent,
                 borderRadius: BorderRadius.circular(999),
               ),
               child: Text(
@@ -223,14 +224,14 @@ class _PendingApprovalsCard extends StatelessWidget {
                 Text(
                   headline,
                   style: PurpleType.serifStyle(
-                        color: Colors.white.withValues(alpha: 0.92),
+                        color: PloyColors.fromWhiteAlpha(0.92),
                       ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   'Open the caregiver inbox to review',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.5),
+                        color: PloyColors.fromWhiteAlpha(0.5),
                       ),
                 ),
               ],
@@ -239,7 +240,7 @@ class _PendingApprovalsCard extends StatelessWidget {
           Icon(
             Icons.chevron_right,
             size: 18,
-            color: Colors.white.withValues(alpha: 0.4),
+            color: PloyColors.fromWhiteAlpha(0.4),
           ),
         ],
       ),
@@ -270,7 +271,7 @@ class _SharingBodyState extends State<_SharingBody> {
           Text(
             data.loadError!,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.55),
+                  color: PloyColors.fromWhiteAlpha(0.55),
                 ),
           ),
           const SizedBox(height: 16),
@@ -279,14 +280,14 @@ class _SharingBodyState extends State<_SharingBody> {
           'My caregivers',
           style: PurpleType.serifStyle(
                 fontSize: Theme.of(context).textTheme.titleLarge?.fontSize,
-                color: Colors.white.withValues(alpha: 0.95),
+                color: PloyColors.fromWhiteAlpha(0.95),
               ),
         ),
         const SizedBox(height: 4),
         Text(
           'People you invited to help with your care.',
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Colors.white.withValues(alpha: 0.55),
+                color: PloyColors.fromWhiteAlpha(0.55),
               ),
         ),
         const SizedBox(height: 12),
@@ -315,7 +316,7 @@ class _SharingBodyState extends State<_SharingBody> {
               padding: EdgeInsets.zero,
               minimumSize: const Size(44, 44),
               alignment: Alignment.centerLeft,
-              foregroundColor: Colors.white.withValues(alpha: 0.6),
+              foregroundColor: PloyColors.fromWhiteAlpha(0.6),
             ),
             child: Text(
               '${_showArchived ? 'Hide' : 'Show'} archived (${widget.archived.length})',
@@ -340,14 +341,14 @@ class _SharingBodyState extends State<_SharingBody> {
           'People sharing with me',
           style: PurpleType.serifStyle(
                 fontSize: Theme.of(context).textTheme.titleLarge?.fontSize,
-                color: Colors.white.withValues(alpha: 0.95),
+                color: PloyColors.fromWhiteAlpha(0.95),
               ),
         ),
         const SizedBox(height: 4),
         Text(
           'Accounts where you are a caregiver.',
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Colors.white.withValues(alpha: 0.55),
+                color: PloyColors.fromWhiteAlpha(0.55),
               ),
         ),
         const SizedBox(height: 12),
@@ -383,7 +384,7 @@ class _SharingBodyState extends State<_SharingBody> {
           'Inviting caregivers and editing their access is available on the '
           'web app for now (blocked on Worker routes, care.functions.ts).',
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Colors.white.withValues(alpha: 0.45),
+                color: PloyColors.fromWhiteAlpha(0.45),
                 height: 1.4,
               ),
         ),

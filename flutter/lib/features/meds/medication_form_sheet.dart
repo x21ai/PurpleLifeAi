@@ -10,6 +10,7 @@ import 'med_name_search.dart';
 import 'meds_repository.dart';
 import 'meds_style.dart';
 import 'models/medication.dart';
+import '../../design/ploy_colors.dart';
 
 /// Bottom sheet to add a medication (name, kind, dosage, schedule).
 class MedicationFormSheet extends ConsumerStatefulWidget {
@@ -347,7 +348,7 @@ class _MedicationFormSheetState extends ConsumerState<MedicationFormSheet> {
                                     onChanged: (_) => setState(() {}),
                                     style: TextStyle(
                                       color:
-                                          Colors.white.withValues(alpha: 0.95),
+                                          PloyColors.fromWhiteAlpha(0.95),
                                     ),
                                     decoration: _inputDecoration('Amount'),
                                   ),
@@ -359,7 +360,7 @@ class _MedicationFormSheetState extends ConsumerState<MedicationFormSheet> {
                                     onChanged: (_) => setState(() {}),
                                     style: TextStyle(
                                       color:
-                                          Colors.white.withValues(alpha: 0.95),
+                                          PloyColors.fromWhiteAlpha(0.95),
                                     ),
                                     decoration: _inputDecoration('Unit'),
                                   ),
@@ -376,8 +377,7 @@ class _MedicationFormSheetState extends ConsumerState<MedicationFormSheet> {
                                       controller: _timeControllers[i],
                                       onChanged: (_) => setState(() {}),
                                       style: TextStyle(
-                                        color: Colors.white
-                                            .withValues(alpha: 0.95),
+                                        color: PloyColors.ink,
                                       ),
                                       decoration:
                                           _inputDecoration('HH:MM (24h)'),
@@ -428,7 +428,7 @@ class _MedicationFormSheetState extends ConsumerState<MedicationFormSheet> {
                                     keyboardType: TextInputType.number,
                                     onChanged: (_) => setState(() {}),
                                     style: TextStyle(
-                                      color: Colors.white.withValues(alpha: 0.95),
+                                      color: PloyColors.fromWhiteAlpha(0.95),
                                     ),
                                     decoration: _inputDecoration('Pills on hand'),
                                   ),
@@ -441,7 +441,7 @@ class _MedicationFormSheetState extends ConsumerState<MedicationFormSheet> {
                                     keyboardType: TextInputType.number,
                                     onChanged: (_) => setState(() {}),
                                     style: TextStyle(
-                                      color: Colors.white.withValues(alpha: 0.95),
+                                      color: PloyColors.fromWhiteAlpha(0.95),
                                     ),
                                     decoration: _inputDecoration('Alert at'),
                                   ),

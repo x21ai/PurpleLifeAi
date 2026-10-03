@@ -16,11 +16,17 @@ Also see `mem/index.md` for deeper architectural notes.
 
 ---
 
-### 2026-10-03 - Flutter auth chrome follows the live Ploy shield [ACTIVE]
+### 2026-10-03 - Flutter app uses the live Ploy light system [ACTIVE]
+
+- **Decision:** Every Flutter screen a tester can open uses the live Ploy light palette from `ploy-staging` `.purplelife-pilot` (canvas `#f8f7fa`, surface white, ink `#18161d`, muted `#67646f`, accent `#8e61cf`). Sign-in, reset, and welcome keep the `PrivacyShield` access chrome. Signed-in screens use the same tokens for canvas, cards, type, sheets, and empty states. There is no Flutter dark shell. Appearance Dark and System store a preference and still render this light look.
+- **Reason:** Testers still saw the old dark liquid-glass app after the sign-in-only port. The operator said nothing should stay in the old design.
+- **Implications:** Do not reintroduce `#0A0710`, `#B084D1`, or white body text on the canvas. Do not port the obsolete TanStack `sign-in.tsx` "Welcome back!" split. Password sign-in stays `POST /api/auth/sign-in` when `DATA_BACKEND=cloudflare`. Flutter may keep its own information architecture where a Ploy page does not cover that workflow. Do not invent a third palette.
+
+### 2026-10-03 - Flutter auth chrome follows the live Ploy shield [SUPERSEDED by 2026-10-03 full light system]
 
 - **Decision:** Flutter sign-in, password reset, and welcome onboarding use the light Ploy access chrome from `ploy-staging` (`.purplelife-pilot` tokens and `PrivacyShield` in `mobile-graphics.tsx`). Production copy is "Sign in to PurpleLife." The TanStack `src/routes/sign-in.tsx` "Welcome back!" glass split is not a Flutter source. Signed-in product screens stay on the dark shell until a separate reskin.
 - **Reason:** TestFlight 1.0 (32) still showed the dark sign-in. Live www `/sign-in` is the Ploy Astro shield. A full Today/Meds reskin was out of scope for this change.
-- **Implications:** Do not revert auth chrome to the dark canvas or port `sign-in.tsx`. Do not treat this chrome as permission to restyle Today, Meds, or Journal in the same pass. Password sign-in stays `POST /api/auth/sign-in` when `DATA_BACKEND=cloudflare`.
+- **Implications:** Superseded the same day. The shield chrome still applies. The sentence that product screens stay dark does not.
 
 ### 2026-10-02 - Flutter TestFlight auth is the Workers JWT when DATA_BACKEND=cloudflare [ACTIVE]
 

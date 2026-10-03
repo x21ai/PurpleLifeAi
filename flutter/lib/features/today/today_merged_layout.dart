@@ -12,6 +12,7 @@ import 'models/score_snapshot.dart';
 import 'seven_day_trends.dart';
 import 'today_focus_store.dart';
 import 'today_repository.dart';
+import '../../design/ploy_colors.dart';
 
 /// Which Today expand panel is open (Merged preview accordion).
 enum TodayExpandPanel { meds, hydration, wearables, log }
@@ -122,9 +123,9 @@ Future<void> showTodayScoreDetail(
     context: context,
     barrierDismissible: true,
     barrierLabel: 'Close score detail',
-    barrierColor: const Color(0xEB0A0710),
+    barrierColor: const Color(0x7318161D),
     pageBuilder: (dialogContext, _, __) {
-      final muted = Colors.white.withValues(alpha: 0.7);
+      final muted = PloyColors.fromWhiteAlpha(0.7);
       return SafeArea(
         child: Material(
           color: Colors.transparent,
@@ -159,7 +160,7 @@ Future<void> showTodayScoreDetail(
                         onSeeFullReading?.call();
                       },
                       style: TextButton.styleFrom(
-                        foregroundColor: Colors.white.withValues(alpha: 0.8),
+                        foregroundColor: PloyColors.fromWhiteAlpha(0.8),
                         minimumSize: const Size(44, 44),
                       ),
                       child: const Text('See the full reading'),
@@ -222,7 +223,7 @@ class TodayYourSignals extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = PurpleTokens.loaded;
-    final muted = Colors.white.withValues(alpha: 0.45);
+    final muted = PloyColors.fromWhiteAlpha(0.45);
     final vitals = buildTodayVitalItems(scores);
     final items = <({String key, String label, String value})>[
       for (final item in vitals)
@@ -252,7 +253,7 @@ class TodayYourSignals extends StatelessWidget {
               TextButton(
                 onPressed: onViewAll,
                 style: TextButton.styleFrom(
-                  foregroundColor: Colors.white.withValues(alpha: 0.55),
+                  foregroundColor: PloyColors.fromWhiteAlpha(0.55),
                   padding: EdgeInsets.zero,
                   minimumSize:
                       Size(tokens.touch.minTarget, tokens.touch.minTarget),
@@ -283,7 +284,7 @@ class TodayYourSignals extends StatelessWidget {
           itemBuilder: (context, i) {
             final item = items[i];
             return Material(
-              color: Colors.white.withValues(alpha: 0.06),
+              color: PloyColors.fromWhiteAlpha(0.06),
               borderRadius: BorderRadius.circular(14),
               child: InkWell(
                 onTap: () => onMetricTap(item.key),
@@ -323,7 +324,7 @@ class TodayYourSignals extends StatelessWidget {
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
                               height: 1,
-                              color: Colors.white,
+                              color: PloyColors.ink,
                             ),
                           ),
                         ),
@@ -353,9 +354,9 @@ class _SignalsEmpty extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final muted = Colors.white.withValues(alpha: 0.55);
+    final muted = PloyColors.fromWhiteAlpha(0.55);
     return Material(
-      color: Colors.white.withValues(alpha: 0.06),
+      color: PloyColors.fromWhiteAlpha(0.06),
       borderRadius: BorderRadius.circular(16),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
@@ -369,7 +370,7 @@ class _SignalsEmpty extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: Colors.white,
+                color: PloyColors.ink,
               ),
             ),
             const SizedBox(height: 6),
@@ -383,7 +384,7 @@ class _SignalsEmpty extends StatelessWidget {
               TextButton(
                 onPressed: onConnect,
                 style: TextButton.styleFrom(
-                  foregroundColor: Colors.white.withValues(alpha: 0.7),
+                  foregroundColor: PloyColors.fromWhiteAlpha(0.7),
                   padding: EdgeInsets.zero,
                   minimumSize: const Size(44, 44),
                   alignment: Alignment.centerLeft,
@@ -458,7 +459,7 @@ class _IconChip extends StatelessWidget {
     return Material(
       color: selected
           ? purple.withValues(alpha: 0.18)
-          : Colors.white.withValues(alpha: 0.06),
+          : PloyColors.fromWhiteAlpha(0.06),
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         onTap: onTap,
@@ -475,7 +476,7 @@ class _IconChip extends StatelessWidget {
                   size: 20,
                   color: selected
                       ? purple
-                      : Colors.white.withValues(alpha: 0.75),
+                      : PloyColors.fromWhiteAlpha(0.75),
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -484,8 +485,8 @@ class _IconChip extends StatelessWidget {
                     fontSize: 11,
                     fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
                     color: selected
-                        ? Colors.white.withValues(alpha: 0.95)
-                        : Colors.white.withValues(alpha: 0.6),
+                        ? PloyColors.fromWhiteAlpha(0.95)
+                        : PloyColors.fromWhiteAlpha(0.6),
                   ),
                 ),
               ],
@@ -529,7 +530,7 @@ class TodayExpandPanelShell extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: Colors.white.withValues(alpha: 0.9),
+                    color: PloyColors.fromWhiteAlpha(0.9),
                   ),
                 ),
               ),
@@ -537,7 +538,7 @@ class TodayExpandPanelShell extends StatelessWidget {
               IconButton(
                 onPressed: onClose,
                 icon: const Icon(Icons.close, size: 18),
-                color: Colors.white.withValues(alpha: 0.55),
+                color: PloyColors.fromWhiteAlpha(0.55),
                 constraints: BoxConstraints(
                   minWidth: tokens.touch.minTarget,
                   minHeight: tokens.touch.minTarget,
@@ -568,7 +569,7 @@ class TodayLastSevenDaysCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final tokens = PurpleTokens.loaded;
     final colors = tokens.colorsFor('dark');
-    final muted = Colors.white.withValues(alpha: 0.55);
+    final muted = PloyColors.fromWhiteAlpha(0.55);
     final purple = parseTokenColor(colors.purplePrimary);
     final trendsAsync = ref.watch(sevenDayTrendsProvider);
     final weekAsync = ref.watch(hydrationWeekProvider);
@@ -599,7 +600,7 @@ class TodayLastSevenDaysCard extends ConsumerWidget {
               style: TextStyle(
                 fontSize: 13,
                 height: 1.4,
-                color: Colors.white.withValues(alpha: 0.7),
+                color: PloyColors.fromWhiteAlpha(0.7),
               ),
             )
           else if (rows.isEmpty)
@@ -608,7 +609,7 @@ class TodayLastSevenDaysCard extends ConsumerWidget {
               style: TextStyle(
                 fontSize: 13,
                 height: 1.4,
-                color: Colors.white.withValues(alpha: 0.7),
+                color: PloyColors.fromWhiteAlpha(0.7),
               ),
             )
           else
@@ -791,8 +792,8 @@ class _TrendMetric extends StatelessWidget {
     final purple = parseTokenColor(colors.purplePrimary);
     final warn = parseTokenColor(colors.warning);
     final alert = parseTokenColor(colors.danger);
-    final empty = Colors.white.withValues(alpha: 0.16);
-    final muted = Colors.white.withValues(alpha: 0.55);
+    final empty = PloyColors.fromWhiteAlpha(0.16);
+    final muted = PloyColors.fromWhiteAlpha(0.55);
 
     Color barColor(double intensity) {
       if (intensity <= 0) return empty;
@@ -836,7 +837,7 @@ class _TrendMetric extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
-                color: Colors.white,
+                color: PloyColors.ink,
               ),
             ),
           ],
@@ -881,7 +882,7 @@ class TodayHydrationExpandBody extends StatelessWidget {
           'Log every drink, water and electrolytes.',
           style: TextStyle(
             fontSize: 13,
-            color: Colors.white.withValues(alpha: 0.65),
+            color: PloyColors.fromWhiteAlpha(0.65),
             height: 1.4,
           ),
         ),
@@ -912,7 +913,7 @@ class TodayWearablesExpandBody extends StatelessWidget {
           'Manage Oura, Apple Health, and WHOOP sync from Tools.',
           style: TextStyle(
             fontSize: 13,
-            color: Colors.white.withValues(alpha: 0.65),
+            color: PloyColors.fromWhiteAlpha(0.65),
             height: 1.4,
           ),
         ),

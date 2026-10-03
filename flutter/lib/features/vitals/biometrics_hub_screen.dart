@@ -9,6 +9,7 @@ import '../shared/glass_helpers.dart';
 import 'biometric_metrics.dart';
 import 'metric_detail_screen.dart' show StatusBadge, warningTokenColor;
 import 'vitals_repository.dart';
+import '../../design/ploy_colors.dart';
 
 /// Local optimistic pin state layered over [pinnedMetricsProvider].
 final _pinnedOverrideProvider = StateProvider<List<String>?>((ref) => null);
@@ -253,7 +254,7 @@ class _HubSections extends ConsumerWidget {
             Text(
               'No readings yet. Connect a wearable to start seeing your signals.',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.65),
+                    color: PloyColors.fromWhiteAlpha(0.65),
                     height: 1.5,
                   ),
             ),
@@ -306,7 +307,7 @@ class _AttentionBanner extends StatelessWidget {
                 Text(
                   title,
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.92),
+                        color: PloyColors.fromWhiteAlpha(0.92),
                         fontWeight: FontWeight.w600,
                       ),
                 ),
@@ -314,7 +315,7 @@ class _AttentionBanner extends StatelessWidget {
                 Text(
                   sub,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.6),
+                        color: PloyColors.fromWhiteAlpha(0.6),
                       ),
                 ),
               ],
@@ -337,7 +338,7 @@ class _SectionLabel extends StatelessWidget {
       label.toUpperCase(),
       style: Theme.of(context).textTheme.labelSmall?.copyWith(
             letterSpacing: 1.2,
-            color: Colors.white.withValues(alpha: 0.45),
+            color: PloyColors.fromWhiteAlpha(0.45),
           ),
     );
   }
@@ -366,7 +367,7 @@ class _MetricCard extends StatelessWidget {
     final tone = r == null ? null : statusTone(meta, r.status);
     final valueColor = tone?.tone == StatusTone.warn
         ? warningTokenColor()
-        : Colors.white.withValues(alpha: 0.95);
+        : PloyColors.fromWhiteAlpha(0.95);
 
     return GlassCard(
       onTap: () => context.go(AppRoutes.biometricsMetric(metricKey)),
@@ -383,7 +384,7 @@ class _MetricCard extends StatelessWidget {
                       child: Text(
                         meta.label,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Colors.white.withValues(alpha: 0.7),
+                              color: PloyColors.fromWhiteAlpha(0.7),
                             ),
                       ),
                     ),
@@ -415,8 +416,7 @@ class _MetricCard extends StatelessWidget {
                                   .textTheme
                                   .bodySmall
                                   ?.copyWith(
-                                    color: Colors.white
-                                        .withValues(alpha: 0.5),
+                                    color: PloyColors.muted,
                                   ),
                             ),
                           ],
@@ -428,7 +428,7 @@ class _MetricCard extends StatelessWidget {
                     'via ${sourceLabels[r.headlineSource] ?? sourceKeyToString(r.headlineSource!)}'
                     '${_deltaSuffix(r)}',
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: Colors.white.withValues(alpha: 0.45),
+                          color: PloyColors.fromWhiteAlpha(0.45),
                         ),
                   ),
                 ],
@@ -443,8 +443,8 @@ class _MetricCard extends StatelessWidget {
               pinned ? Icons.push_pin : Icons.push_pin_outlined,
               size: 18,
               color: pinned
-                  ? Colors.white.withValues(alpha: 0.85)
-                  : Colors.white.withValues(alpha: 0.4),
+                  ? PloyColors.fromWhiteAlpha(0.85)
+                  : PloyColors.fromWhiteAlpha(0.4),
             ),
             tooltip: pinned ? 'Unpin' : 'Pin',
           ),
@@ -531,8 +531,8 @@ class _Pill extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: selected
-          ? Colors.white.withValues(alpha: 0.16)
-          : Colors.white.withValues(alpha: 0.06),
+          ? PloyColors.fromWhiteAlpha(0.16)
+          : PloyColors.fromWhiteAlpha(0.06),
       borderRadius: BorderRadius.circular(999),
       child: InkWell(
         onTap: onTap,
@@ -546,8 +546,8 @@ class _Pill extends StatelessWidget {
                 label,
                 style: Theme.of(context).textTheme.labelMedium?.copyWith(
                       color: selected
-                          ? Colors.white.withValues(alpha: 0.95)
-                          : Colors.white.withValues(alpha: 0.55),
+                          ? PloyColors.fromWhiteAlpha(0.95)
+                          : PloyColors.fromWhiteAlpha(0.55),
                       fontWeight:
                           selected ? FontWeight.w600 : FontWeight.w500,
                     ),

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../shell/routes.dart';
 import '../../shared/glass_helpers.dart';
 import '../models/report_row.dart';
+import '../../../design/ploy_colors.dart';
 
 class ReportDocumentTile extends StatelessWidget {
   const ReportDocumentTile({super.key, required this.document});
@@ -29,7 +30,7 @@ class ReportDocumentTile extends StatelessWidget {
         children: [
           Icon(
             Icons.description_outlined,
-            color: Colors.white.withValues(alpha: 0.55),
+            color: PloyColors.fromWhiteAlpha(0.55),
             size: 22,
           ),
           const SizedBox(width: 12),
@@ -40,7 +41,7 @@ class ReportDocumentTile extends StatelessWidget {
                 Text(
                   document.displayTitle,
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.95),
+                        color: PloyColors.fromWhiteAlpha(0.95),
                       ),
                 ),
                 if (subtitle.isNotEmpty) ...[
@@ -48,7 +49,7 @@ class ReportDocumentTile extends StatelessWidget {
                   Text(
                     subtitle,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.white.withValues(alpha: 0.6),
+                          color: PloyColors.fromWhiteAlpha(0.6),
                         ),
                   ),
                 ],
@@ -59,7 +60,7 @@ class ReportDocumentTile extends StatelessWidget {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.white.withValues(alpha: 0.55),
+                          color: PloyColors.fromWhiteAlpha(0.55),
                           height: 1.4,
                         ),
                   ),
@@ -69,7 +70,7 @@ class ReportDocumentTile extends StatelessWidget {
           ),
           Icon(
             Icons.chevron_right,
-            color: Colors.white.withValues(alpha: 0.4),
+            color: PloyColors.fromWhiteAlpha(0.4),
           ),
         ],
       ),
@@ -104,7 +105,7 @@ class MedicalReportTile extends StatelessWidget {
         children: [
           Icon(
             Icons.medical_information_outlined,
-            color: Colors.white.withValues(alpha: 0.55),
+            color: PloyColors.fromWhiteAlpha(0.55),
             size: 22,
           ),
           const SizedBox(width: 12),
@@ -115,14 +116,14 @@ class MedicalReportTile extends StatelessWidget {
                 Text(
                   'Medical history',
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.95),
+                        color: PloyColors.fromWhiteAlpha(0.95),
                       ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   report.windowLabel,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.6),
+                        color: PloyColors.fromWhiteAlpha(0.6),
                       ),
                 ),
                 if (report.summary?.trim().isNotEmpty == true) ...[
@@ -132,7 +133,7 @@ class MedicalReportTile extends StatelessWidget {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.white.withValues(alpha: 0.55),
+                          color: PloyColors.fromWhiteAlpha(0.55),
                           height: 1.4,
                         ),
                   ),
@@ -156,7 +157,7 @@ class ReportsSectionTitle extends StatelessWidget {
     return Text(
       title,
       style: Theme.of(context).textTheme.titleLarge?.copyWith(
-            color: Colors.white.withValues(alpha: 0.95),
+            color: PloyColors.fromWhiteAlpha(0.95),
           ),
     );
   }

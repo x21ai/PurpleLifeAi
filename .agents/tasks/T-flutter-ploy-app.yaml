@@ -1,0 +1,21 @@
+id: T-flutter-ploy-app
+title: Flutter signed-in app uses the Ploy light system
+intent: >-
+  Bring every tester-visible Flutter screen onto the live Ploy light design.
+  Keep Worker JWT auth. Stay on 1.0.0+33. Do not merge or deploy.
+partition: flutter-auth
+depends_on:
+  - T-flutter-ploy-signin
+risk: medium
+acceptance:
+  - "Signed-in screens use Ploy canvas, white cards, and accent #8E61CF"
+  - "Password sign-in still uses POST /api/auth/sign-in"
+  - "pubspec stays 1.0.0+33"
+  - "flutter analyze clean and flutter test green"
+  - "PR 72 updated, not merged"
+state: landed
+claimant: cursor-cloud-agent
+lease_expires: ""
+evidence:
+  - "flutter analyze: no issues"
+  - "flutter test: 285/285"

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../design/ploy_colors.dart';
 
 /// Renders assistant text as Markdown, splitting out `[Source: Title (Year)](url)`
 /// citations into tappable / muted pills (mirrors web `renderWithSourceCitations`).
@@ -47,7 +48,7 @@ class CitationText extends StatelessWidget {
     final trimmed = md.trim();
     if (trimmed.isEmpty) return const SizedBox.shrink();
     final base = Theme.of(context).textTheme.bodyMedium?.copyWith(
-          color: Colors.white.withValues(alpha: 0.92),
+          color: PloyColors.fromWhiteAlpha(0.92),
           height: 1.45,
         );
     return MarkdownBody(
@@ -91,18 +92,18 @@ class _CitationPill extends StatelessWidget {
       decoration: BoxDecoration(
         color: hasUrl
             ? primary.withValues(alpha: 0.12)
-            : Colors.white.withValues(alpha: 0.06),
+            : PloyColors.fromWhiteAlpha(0.06),
         borderRadius: BorderRadius.circular(999),
         border: Border.all(
           color: hasUrl
               ? primary.withValues(alpha: 0.3)
-              : Colors.white.withValues(alpha: 0.12),
+              : PloyColors.fromWhiteAlpha(0.12),
         ),
       ),
       child: Text(
         label,
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: hasUrl ? primary : Colors.white.withValues(alpha: 0.6),
+              color: hasUrl ? primary : PloyColors.fromWhiteAlpha(0.6),
               fontWeight: FontWeight.w500,
             ),
       ),

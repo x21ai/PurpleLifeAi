@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../design/tokens.dart';
 import 'models/dose.dart';
+import '../../design/ploy_colors.dart';
 
 /// Equal segments for today's doses, matching the merged preview
 /// `.meds-timeline` bar. Each segment follows that dose's status.
@@ -16,8 +17,8 @@ class MedsSegmentTimeline extends StatelessWidget {
     final colors = PurpleTokens.loaded.colorsFor('dark');
     final purple = parseTokenColor(colors.purplePrimary);
     final danger = parseTokenColor(colors.danger);
-    final muted = Colors.white.withValues(alpha: 0.18);
-    final skipped = Colors.white.withValues(alpha: 0.32);
+    final muted = PloyColors.fromWhiteAlpha(0.18);
+    final skipped = PloyColors.fromWhiteAlpha(0.32);
     final taken = doses.where((dose) => dose.status == 'taken').length;
 
     Color colorFor(MedicationDose dose) {

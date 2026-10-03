@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../design/purple_type.dart';
 import '../../shell/routes.dart';
 import '../shared/glass_helpers.dart';
+import '../../design/ploy_colors.dart';
 
 /// In-app privacy copy from web `settings.privacy.tsx`.
 class PrivacyScreen extends StatelessWidget {
@@ -33,7 +34,7 @@ class PrivacyScreen extends StatelessWidget {
                       child: IconButton(
                         onPressed: () => context.go(AppRoutes.settings),
                         icon: const Icon(Icons.close_rounded, size: 20),
-                        color: Colors.white.withValues(alpha: 0.6),
+                        color: PloyColors.fromWhiteAlpha(0.6),
                         tooltip: 'Close',
                         constraints:
                             const BoxConstraints(minWidth: 44, minHeight: 44),
@@ -43,7 +44,7 @@ class PrivacyScreen extends StatelessWidget {
                       'Privacy & safety',
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.95),
+                            color: PloyColors.fromWhiteAlpha(0.95),
                           ),
                     ),
                   ],
@@ -139,7 +140,7 @@ class PrivacyScreen extends StatelessWidget {
               Text(
                 'Last updated: June 2026.',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.45),
+                      color: PloyColors.fromWhiteAlpha(0.45),
                     ),
               ),
             ],
@@ -172,14 +173,14 @@ class _PrivacyCard extends StatelessWidget {
             title,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontFamily: PurpleType.serif,
-                  color: Colors.white.withValues(alpha: 0.95),
+                  color: PloyColors.fromWhiteAlpha(0.95),
                 ),
           ),
           const SizedBox(height: 8),
           Text(
             body,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.7),
+                  color: PloyColors.fromWhiteAlpha(0.7),
                   height: 1.5,
                 ),
           ),

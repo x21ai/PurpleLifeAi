@@ -22,7 +22,7 @@ class GlassSurface extends StatelessWidget {
     this.useBackdrop = true,
     this.includeHighlight = false,
     this.tokens,
-    this.appearance = 'dark',
+    this.appearance = 'light',
   });
 
   final Widget child;

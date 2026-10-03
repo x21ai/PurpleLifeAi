@@ -11,6 +11,7 @@ import 'meds_style.dart';
 import 'meds_today.dart';
 import 'models/dose.dart';
 import 'models/medication.dart';
+import '../../design/ploy_colors.dart';
 
 Color _statusColor(String status) {
   final colors = PurpleTokens.loaded.colorsFor('dark');
@@ -20,7 +21,7 @@ Color _statusColor(String status) {
     case 'missed':
       return parseTokenColor(colors.destructive);
     case 'skipped':
-      return Colors.white.withValues(alpha: 0.55);
+      return PloyColors.fromWhiteAlpha(0.55);
     default:
       return parseTokenColor(colors.purplePrimary);
   }
@@ -188,7 +189,7 @@ class TodayDosePanel extends StatelessWidget {
                           height: 14,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            color: Colors.white.withValues(alpha: 0.7),
+                            color: PloyColors.fromWhiteAlpha(0.7),
                           ),
                         )
                       : const Icon(Icons.done_all, size: 14),
@@ -938,7 +939,7 @@ class MedLibraryRow extends StatelessWidget {
                           if (!medication.active)
                             _Badge(
                               label: 'ARCHIVED',
-                              color: Colors.white.withValues(alpha: 0.55),
+                              color: PloyColors.fromWhiteAlpha(0.55),
                             ),
                         ],
                       ),

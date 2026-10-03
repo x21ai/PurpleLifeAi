@@ -10,6 +10,7 @@ import '../meds/meds_repository.dart';
 import '../shared/glass_helpers.dart';
 import 'events_style.dart';
 import 'timeline_repository.dart';
+import '../../design/ploy_colors.dart';
 
 enum TimelineRange { day, week, month, year, custom }
 
@@ -144,7 +145,7 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
                     Text(
                       'Add:',
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.55),
+                            color: PloyColors.fromWhiteAlpha(0.55),
                           ),
                     ),
                     _QuickAddChip(
@@ -183,22 +184,22 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
                           hintText: 'Search…',
                           isDense: true,
                           filled: true,
-                          fillColor: Colors.white.withValues(alpha: 0.06),
+                          fillColor: PloyColors.fromWhiteAlpha(0.06),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide(
-                              color: Colors.white.withValues(alpha: 0.12),
+                              color: PloyColors.fromWhiteAlpha(0.12),
                             ),
                           ),
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide(
-                              color: Colors.white.withValues(alpha: 0.12),
+                              color: PloyColors.fromWhiteAlpha(0.12),
                             ),
                           ),
                         ),
                         style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.9),
+                          color: PloyColors.fromWhiteAlpha(0.9),
                         ),
                       ),
                     ),
@@ -240,7 +241,7 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
                       child: Text(
                         'Loading…',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Colors.white.withValues(alpha: 0.55),
+                              color: PloyColors.fromWhiteAlpha(0.55),
                             ),
                       ),
                     ),
@@ -286,7 +287,7 @@ class _TimelineScreenState extends ConsumerState<TimelineScreen> {
                 Text(
                   'Want to add older history? Medications and Log past event both accept any date.',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.45),
+                        color: PloyColors.fromWhiteAlpha(0.45),
                       ),
                 ),
               ],
@@ -324,8 +325,8 @@ class _QuickAddChip extends StatelessWidget {
       icon: Icon(icon, size: 16),
       label: Text(label),
       style: OutlinedButton.styleFrom(
-        foregroundColor: Colors.white.withValues(alpha: 0.85),
-        side: BorderSide(color: Colors.white.withValues(alpha: 0.15)),
+        foregroundColor: PloyColors.fromWhiteAlpha(0.85),
+        side: BorderSide(color: PloyColors.fromWhiteAlpha(0.15)),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       ),
     );
@@ -357,11 +358,11 @@ class _RangeChip extends StatelessWidget {
             borderRadius: BorderRadius.circular(999),
             color: selected
                 ? Theme.of(context).colorScheme.primary
-                : Colors.white.withValues(alpha: 0.06),
+                : PloyColors.fromWhiteAlpha(0.06),
             border: Border.all(
               color: selected
                   ? Theme.of(context).colorScheme.primary
-                  : Colors.white.withValues(alpha: 0.12),
+                  : PloyColors.fromWhiteAlpha(0.12),
             ),
           ),
           child: Text(
@@ -369,7 +370,7 @@ class _RangeChip extends StatelessWidget {
             style: TextStyle(
               color: selected
                   ? Colors.white
-                  : Colors.white.withValues(alpha: 0.85),
+                  : PloyColors.fromWhiteAlpha(0.85),
               fontSize: 13,
             ),
           ),
@@ -400,7 +401,7 @@ class _DateField extends StatelessWidget {
           label.toUpperCase(),
           style: Theme.of(context).textTheme.labelSmall?.copyWith(
                 letterSpacing: 1.1,
-                color: Colors.white.withValues(alpha: 0.45),
+                color: PloyColors.fromWhiteAlpha(0.45),
               ),
         ),
         const SizedBox(height: 4),
@@ -435,7 +436,7 @@ class _TimelineEmpty extends StatelessWidget {
           Text(
             'Nothing in this range yet.',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.65),
+                  color: PloyColors.fromWhiteAlpha(0.65),
                 ),
           ),
           const SizedBox(height: 4),
@@ -443,15 +444,15 @@ class _TimelineEmpty extends StatelessWidget {
             'Entries, doses, and seizure logs from this range will line up here.',
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.55),
+                  color: PloyColors.fromWhiteAlpha(0.55),
                 ),
           ),
           const SizedBox(height: 16),
           OutlinedButton(
             onPressed: onJournal,
             style: OutlinedButton.styleFrom(
-              foregroundColor: Colors.white.withValues(alpha: 0.85),
-              side: BorderSide(color: Colors.white.withValues(alpha: 0.15)),
+              foregroundColor: PloyColors.fromWhiteAlpha(0.85),
+              side: BorderSide(color: PloyColors.fromWhiteAlpha(0.15)),
               shape: const StadiumBorder(),
             ),
             child: const Text('Write a journal entry'),
@@ -548,8 +549,8 @@ class _TimelineRowState extends ConsumerState<_TimelineRow> {
           height: 28,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: Colors.white.withValues(alpha: 0.06),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+            color: PloyColors.fromWhiteAlpha(0.06),
+            border: Border.all(color: PloyColors.fromWhiteAlpha(0.12)),
           ),
           child: Icon(_icon, size: 16, color: Theme.of(context).colorScheme.primary),
         ),
@@ -564,7 +565,7 @@ class _TimelineRowState extends ConsumerState<_TimelineRow> {
                   widget.whenLabel.toUpperCase(),
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
                         letterSpacing: 0.8,
-                        color: Colors.white.withValues(alpha: 0.45),
+                        color: PloyColors.fromWhiteAlpha(0.45),
                       ),
                 ),
                 const SizedBox(height: 6),
@@ -572,7 +573,7 @@ class _TimelineRowState extends ConsumerState<_TimelineRow> {
                   entry.title,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontFamily: PurpleType.serif,
-                        color: Colors.white.withValues(alpha: 0.92),
+                        color: PloyColors.fromWhiteAlpha(0.92),
                         height: 1.35,
                       ),
                 ),
@@ -581,7 +582,7 @@ class _TimelineRowState extends ConsumerState<_TimelineRow> {
                   Text(
                     entry.body!,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.white.withValues(alpha: 0.7),
+                          color: PloyColors.fromWhiteAlpha(0.7),
                           height: 1.45,
                         ),
                   ),
@@ -650,12 +651,12 @@ class _DoseActionButton extends StatelessWidget {
       border = primary;
     } else if (muted) {
       background = Colors.transparent;
-      foreground = Colors.white.withValues(alpha: 0.55);
+      foreground = PloyColors.fromWhiteAlpha(0.55);
       border = Colors.transparent;
     } else {
-      background = Colors.white.withValues(alpha: 0.06);
-      foreground = Colors.white.withValues(alpha: 0.85);
-      border = Colors.white.withValues(alpha: 0.15);
+      background = PloyColors.fromWhiteAlpha(0.06);
+      foreground = PloyColors.fromWhiteAlpha(0.85);
+      border = PloyColors.fromWhiteAlpha(0.15);
     }
 
     return Material(
@@ -723,7 +724,7 @@ class _PaginationBar extends StatelessWidget {
             const SizedBox(width: 8),
             Text(
               '$currentPage / $totalPages',
-              style: TextStyle(color: Colors.white.withValues(alpha: 0.55)),
+              style: TextStyle(color: PloyColors.fromWhiteAlpha(0.55)),
             ),
             const SizedBox(width: 8),
             OutlinedButton(
@@ -736,7 +737,7 @@ class _PaginationBar extends StatelessWidget {
         Text(
           'Showing ${startIdx + 1}–$end of $total',
           style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: Colors.white.withValues(alpha: 0.45),
+                color: PloyColors.fromWhiteAlpha(0.45),
               ),
         ),
       ],

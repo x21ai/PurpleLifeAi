@@ -6,13 +6,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
 import 'care_chat_repository.dart';
+import '../../design/ploy_colors.dart';
 
 /// Shared dark-glass sheet chrome for the care-chat pickers.
 Future<T?> _showCareSheet<T>(BuildContext context, WidgetBuilder builder) {
   return showModalBottomSheet<T>(
     context: context,
     isScrollControlled: true,
-    backgroundColor: const Color(0xFF15121D),
+    backgroundColor: PloyColors.surface,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
     ),
@@ -34,7 +35,7 @@ Widget _sheetTitle(BuildContext context, String text) {
     child: Text(
       text,
       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            color: Colors.white.withValues(alpha: 0.95),
+            color: PloyColors.fromWhiteAlpha(0.95),
             fontWeight: FontWeight.w600,
           ),
     ),
@@ -106,7 +107,7 @@ class _NewChatSheetState extends ConsumerState<_NewChatSheet> {
             padding: EdgeInsets.fromLTRB(20, 4, 20, 24),
             child: Text(
               "Couldn't load your care relationships.",
-              style: TextStyle(color: Colors.white70),
+              style: TextStyle(color: PloyColors.muted),
             ),
           ),
           data: (contacts) {
@@ -116,7 +117,7 @@ class _NewChatSheetState extends ConsumerState<_NewChatSheet> {
                 child: Text(
                   'No active care relationships yet. Invite someone from '
                   'Settings → Sharing.',
-                  style: TextStyle(color: Colors.white70, height: 1.4),
+                  style: TextStyle(color: PloyColors.muted, height: 1.4),
                 ),
               );
             }
@@ -127,7 +128,7 @@ class _NewChatSheetState extends ConsumerState<_NewChatSheet> {
                 itemCount: contacts.length,
                 separatorBuilder: (_, __) => Divider(
                   height: 1,
-                  color: Colors.white.withValues(alpha: 0.06),
+                  color: PloyColors.fromWhiteAlpha(0.06),
                 ),
                 itemBuilder: (context, index) {
                   final c = contacts[index];
@@ -136,11 +137,11 @@ class _NewChatSheetState extends ConsumerState<_NewChatSheet> {
                     minVerticalPadding: 14,
                     leading: Icon(
                       Icons.chat_bubble_outline,
-                      color: Colors.white.withValues(alpha: 0.6),
+                      color: PloyColors.fromWhiteAlpha(0.6),
                     ),
                     title: Text(
                       c.label,
-                      style: const TextStyle(color: Colors.white),
+                      style: const TextStyle(color: PloyColors.ink),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -258,7 +259,7 @@ class _GroupSheetState extends ConsumerState<_GroupSheet> {
           error: (_, __) => const Padding(
             padding: EdgeInsets.fromLTRB(20, 4, 20, 20),
             child: Text("Couldn't load groups.",
-                style: TextStyle(color: Colors.white70)),
+                style: TextStyle(color: PloyColors.muted)),
           ),
           data: (groups) {
             if (groups.isEmpty) {
@@ -267,7 +268,7 @@ class _GroupSheetState extends ConsumerState<_GroupSheet> {
                 child: Text(
                   'No groups yet. Create one to chat with several caregivers '
                   'at once.',
-                  style: TextStyle(color: Colors.white70, height: 1.4),
+                  style: TextStyle(color: PloyColors.muted, height: 1.4),
                 ),
               );
             }
@@ -279,15 +280,15 @@ class _GroupSheetState extends ConsumerState<_GroupSheet> {
                   final g = groups[index];
                   return ListTile(
                     leading: Icon(Icons.groups_outlined,
-                        color: Colors.white.withValues(alpha: 0.6)),
+                        color: PloyColors.fromWhiteAlpha(0.6)),
                     title: Text(g.title,
-                        style: const TextStyle(color: Colors.white),
+                        style: const TextStyle(color: PloyColors.ink),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis),
                     trailing: Text(
                       '${g.memberCount} ${g.memberCount == 1 ? 'member' : 'members'}',
                       style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.5),
+                          color: PloyColors.fromWhiteAlpha(0.5),
                           fontSize: 12),
                     ),
                     onTap: () {
@@ -323,12 +324,12 @@ class _GroupSheetState extends ConsumerState<_GroupSheet> {
           TextField(
             controller: _titleController,
             maxLength: 80,
-            style: const TextStyle(color: Colors.white),
+            style: const TextStyle(color: PloyColors.ink),
             decoration: InputDecoration(
               labelText: 'Group name',
-              labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.6)),
+              labelStyle: TextStyle(color: PloyColors.fromWhiteAlpha(0.6)),
               filled: true,
-              fillColor: Colors.white.withValues(alpha: 0.04),
+              fillColor: PloyColors.fromWhiteAlpha(0.04),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide.none,
@@ -340,7 +341,7 @@ class _GroupSheetState extends ConsumerState<_GroupSheet> {
             alignment: Alignment.centerLeft,
             child: Text('Caregivers',
                 style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.6), fontSize: 12)),
+                    color: PloyColors.fromWhiteAlpha(0.6), fontSize: 12)),
           ),
           const SizedBox(height: 8),
           caregiversAsync.when(
@@ -349,7 +350,7 @@ class _GroupSheetState extends ConsumerState<_GroupSheet> {
               child: Center(child: CircularProgressIndicator()),
             ),
             error: (_, __) => const Text("Couldn't load caregivers.",
-                style: TextStyle(color: Colors.white70)),
+                style: TextStyle(color: PloyColors.muted)),
             data: (caregivers) {
               final selectable =
                   caregivers.where((c) => c.caregiverId != null).toList();
@@ -357,7 +358,7 @@ class _GroupSheetState extends ConsumerState<_GroupSheet> {
                 return const Text(
                   'No active caregivers yet. Invite someone from '
                   'Settings → Sharing.',
-                  style: TextStyle(color: Colors.white70, height: 1.4),
+                  style: TextStyle(color: PloyColors.muted, height: 1.4),
                 );
               }
               return Flexible(
@@ -377,7 +378,7 @@ class _GroupSheetState extends ConsumerState<_GroupSheet> {
                       }),
                       controlAffinity: ListTileControlAffinity.leading,
                       title: Text(c.label,
-                          style: const TextStyle(color: Colors.white),
+                          style: const TextStyle(color: PloyColors.ink),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis),
                     );
@@ -518,8 +519,8 @@ class _AttachOptionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      leading: Icon(icon, color: Colors.white.withValues(alpha: 0.85)),
-      title: Text(label, style: const TextStyle(color: Colors.white)),
+      leading: Icon(icon, color: PloyColors.fromWhiteAlpha(0.85)),
+      title: Text(label, style: const TextStyle(color: PloyColors.ink)),
       onTap: onTap,
     );
   }

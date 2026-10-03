@@ -14,7 +14,7 @@ PurpleThemeMode parseThemeMode(String? raw) {
     case 'system':
       return PurpleThemeMode.system;
     default:
-      return PurpleThemeMode.dark;
+      return PurpleThemeMode.light;
   }
 }
 
@@ -43,28 +43,20 @@ String themeModeLabel(PurpleThemeMode mode) {
 String themeModeDescription(PurpleThemeMode mode) {
   switch (mode) {
     case PurpleThemeMode.light:
-      return 'Always light';
-    case PurpleThemeMode.system:
-      return 'Match device';
-    case PurpleThemeMode.dark:
       return 'Default';
+    case PurpleThemeMode.system:
+      return 'Uses the light PurpleLife look';
+    case PurpleThemeMode.dark:
+      return 'Uses the light PurpleLife look';
   }
 }
 
 Brightness resolveThemeBrightness(PurpleThemeMode mode) {
-  switch (mode) {
-    case PurpleThemeMode.light:
-      return Brightness.light;
-    case PurpleThemeMode.system:
-      final platform = WidgetsBinding.instance.platformDispatcher;
-      return platform.platformBrightness;
-    case PurpleThemeMode.dark:
-      return Brightness.dark;
-  }
+  return Brightness.light;
 }
 
 class ThemePreferenceNotifier extends StateNotifier<PurpleThemeMode> {
-  ThemePreferenceNotifier() : super(PurpleThemeMode.dark) {
+  ThemePreferenceNotifier() : super(PurpleThemeMode.light) {
     _load();
   }
 
@@ -73,7 +65,7 @@ class ThemePreferenceNotifier extends StateNotifier<PurpleThemeMode> {
       final prefs = await SharedPreferences.getInstance();
       state = parseThemeMode(prefs.getString(_storageKey));
     } catch (_) {
-      state = PurpleThemeMode.dark;
+      state = PurpleThemeMode.light;
     }
   }
 

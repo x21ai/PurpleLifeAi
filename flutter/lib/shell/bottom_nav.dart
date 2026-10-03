@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../design/glass_surface.dart';
+import '../design/ploy_colors.dart';
 import '../design/purple_theme.dart';
 import '../design/tokens.dart';
 import 'routes.dart';
@@ -153,9 +154,10 @@ class _TabButton extends StatelessWidget {
                     height: 30,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(15),
-                      color: active
-                          ? PurpleColors.purplePrimary.withValues(alpha: 0.14)
-                          : Colors.transparent,
+                      color: active ? PloyColors.surface : Colors.transparent,
+                      border: active
+                          ? Border.all(color: PloyColors.line)
+                          : null,
                     ),
                     child: Center(
                       child: Icon(tab.icon, size: 24, color: color),

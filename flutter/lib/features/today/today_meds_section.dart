@@ -13,6 +13,7 @@ import '../meds/med_refill_sheet.dart';
 import '../meds/meds_repository.dart';
 import '../meds/models/dose.dart';
 import '../meds/models/medication.dart';
+import '../../design/ploy_colors.dart';
 
 /// Doses for a specific calendar day (`yyyy-MM-dd`), mirroring web
 /// `TodayDoses date={selectedDate}` without editing [medsDataProvider].
@@ -102,7 +103,7 @@ class TodayMedsSection extends ConsumerWidget {
       loading: () => Text(
         'Loading your dose schedule.',
         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Colors.white.withValues(alpha: 0.64),
+              color: PloyColors.fromWhiteAlpha(0.64),
             ),
       ),
       error: (_, __) => Column(
@@ -111,7 +112,7 @@ class TodayMedsSection extends ConsumerWidget {
           Text(
             'Could not load doses right now.',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.64),
+                  color: PloyColors.fromWhiteAlpha(0.64),
                 ),
           ),
           SizedBox(
@@ -151,13 +152,13 @@ class TodayMedsSection extends ConsumerWidget {
                         'Medications',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.white.withValues(alpha: 0.55),
+                          color: PloyColors.fromWhiteAlpha(0.55),
                         ),
                       ),
                       Icon(
                         Icons.chevron_right,
                         size: 16,
-                        color: Colors.white.withValues(alpha: 0.55),
+                        color: PloyColors.fromWhiteAlpha(0.55),
                       ),
                     ],
                   ),
@@ -173,7 +174,7 @@ class TodayMedsSection extends ConsumerWidget {
                       Icon(
                         Icons.medication_outlined,
                         size: 16,
-                        color: Colors.white.withValues(alpha: 0.55),
+                        color: PloyColors.fromWhiteAlpha(0.55),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -183,7 +184,7 @@ class TodayMedsSection extends ConsumerWidget {
                               : '$emptySchedule Add one in Meds.',
                           style:
                               Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: Colors.white.withValues(alpha: 0.64),
+                                    color: PloyColors.fromWhiteAlpha(0.64),
                                     height: 1.4,
                                   ),
                         ),
@@ -331,7 +332,7 @@ class _TodayDoseRow extends StatelessWidget {
                           softWrap: true,
                           style:
                               Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    color: Colors.white.withValues(alpha: 0.93),
+                                    color: PloyColors.fromWhiteAlpha(0.93),
                                   ),
                         ),
                         if (showRefillChip)
@@ -347,7 +348,7 @@ class _TodayDoseRow extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                              color: Colors.white.withValues(alpha: 0.55),
+                              color: PloyColors.fromWhiteAlpha(0.55),
                             ),
                       ),
                   ],
@@ -452,7 +453,7 @@ class _TodayDoseRow extends StatelessWidget {
       case 'missed':
         return parseTokenColor(colors.destructive);
       case 'skipped':
-        return Colors.white.withValues(alpha: 0.55);
+        return PloyColors.fromWhiteAlpha(0.55);
       default:
         return parseTokenColor(colors.purplePrimary);
     }
@@ -522,9 +523,9 @@ class _TimePill extends StatelessWidget {
           parseTokenColor(colors.destructive).withValues(alpha: 0.3),
         ),
       'skipped' => (
-          Colors.white.withValues(alpha: 0.08),
-          Colors.white.withValues(alpha: 0.55),
-          Colors.white.withValues(alpha: 0.12),
+          PloyColors.fromWhiteAlpha(0.08),
+          PloyColors.fromWhiteAlpha(0.55),
+          PloyColors.fromWhiteAlpha(0.12),
         ),
       _ => (
           parseTokenColor(colors.purplePrimary).withValues(alpha: 0.15),

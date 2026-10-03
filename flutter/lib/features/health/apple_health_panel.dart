@@ -10,6 +10,7 @@ import '../shared/glass_helpers.dart';
 import 'health_providers.dart';
 import 'health_service.dart';
 import 'native_health_sync.dart';
+import '../../design/ploy_colors.dart';
 
 const _freshWindow = Duration(days: 3);
 
@@ -435,7 +436,7 @@ class _AppleHealthPanelState extends ConsumerState<AppleHealthPanel>
         return const Color(0xFFEAB308);
       case _AppleHealthSyncState.reachable:
       case _AppleHealthSyncState.waiting:
-        return Colors.white.withValues(alpha: 0.45);
+        return PloyColors.fromWhiteAlpha(0.45);
     }
   }
 
@@ -509,14 +510,14 @@ class _AppleHealthPanelState extends ConsumerState<AppleHealthPanel>
               height: 36,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.08),
+                color: PloyColors.fromWhiteAlpha(0.08),
               ),
               child: Icon(
                 _authorized ? Icons.favorite : Icons.smartphone,
                 size: 18,
                 color: _authorized
                     ? Colors.green.shade300
-                    : Colors.white.withValues(alpha: 0.85),
+                    : PloyColors.fromWhiteAlpha(0.85),
               ),
             ),
             const SizedBox(width: 12),
@@ -527,8 +528,7 @@ class _AppleHealthPanelState extends ConsumerState<AppleHealthPanel>
                   Text(
                     _platformLabel,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontFamily: 'Georgia',
-                          color: Colors.white.withValues(alpha: 0.92),
+                          color: PloyColors.ink,
                         ),
                   ),
                   const SizedBox(height: 2),
@@ -550,7 +550,7 @@ class _AppleHealthPanelState extends ConsumerState<AppleHealthPanel>
                           subtitle,
                           style:
                               Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: Colors.white.withValues(alpha: 0.55),
+                                    color: PloyColors.fromWhiteAlpha(0.55),
                                   ),
                         ),
                       ),
@@ -598,7 +598,7 @@ class _AppleHealthPanelState extends ConsumerState<AppleHealthPanel>
                 onPressed: _openSettings,
                 style: TextButton.styleFrom(
                   minimumSize: const Size(88, 44),
-                  foregroundColor: Colors.white.withValues(alpha: 0.7),
+                  foregroundColor: PloyColors.fromWhiteAlpha(0.7),
                 ),
                 child: const Text('Settings'),
               ),
@@ -611,7 +611,7 @@ class _AppleHealthPanelState extends ConsumerState<AppleHealthPanel>
                 ? 'Grant HealthKit access to sync sleep, HRV, steps, and heart rate from this iPhone.'
                 : 'Grant Health Connect access to sync vitals from this phone.',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.45),
+                  color: PloyColors.fromWhiteAlpha(0.45),
                   height: 1.4,
                 ),
           ),
@@ -649,7 +649,7 @@ class _AppleHealthPanelState extends ConsumerState<AppleHealthPanel>
           Text(
             _availabilityMessage(_statusReason),
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.45),
+                  color: PloyColors.fromWhiteAlpha(0.45),
                 ),
           ),
         ],
@@ -669,13 +669,12 @@ class _AppleHealthPanelState extends ConsumerState<AppleHealthPanel>
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Icon(Icons.smartphone,
-            size: 48, color: Colors.white.withValues(alpha: 0.7)),
+            size: 48, color: PloyColors.fromWhiteAlpha(0.7)),
         const SizedBox(height: 16),
         Text(
           _platformLabel,
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontFamily: 'Georgia',
-                color: Colors.white.withValues(alpha: 0.95),
+                color: PloyColors.ink,
               ),
           textAlign: TextAlign.center,
         ),
@@ -685,7 +684,7 @@ class _AppleHealthPanelState extends ConsumerState<AppleHealthPanel>
               ? 'Purple reads sleep, HRV, heart rate, and steps directly from HealthKit on this iPhone.'
               : 'Purple reads sleep, HRV, heart rate, and steps from Health Connect on this phone.',
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.white.withValues(alpha: 0.7),
+                color: PloyColors.fromWhiteAlpha(0.7),
               ),
           textAlign: TextAlign.center,
         ),
@@ -731,7 +730,7 @@ class _AppleHealthPanelState extends ConsumerState<AppleHealthPanel>
                 ? 'Tap Connect to open the iOS Health Access sheet, or use Health Settings to allow or deny access.'
                 : 'Tap Connect to open Health Connect permissions for Purple.',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.45),
+                  color: PloyColors.fromWhiteAlpha(0.45),
                   height: 1.4,
                 ),
             textAlign: TextAlign.center,
@@ -750,8 +749,7 @@ class _AppleHealthPanelState extends ConsumerState<AppleHealthPanel>
         Text(
           _platformLabel,
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontFamily: 'Georgia',
-                color: Colors.white.withValues(alpha: 0.95),
+                color: PloyColors.ink,
               ),
           textAlign: TextAlign.center,
         ),
@@ -772,7 +770,7 @@ class _AppleHealthPanelState extends ConsumerState<AppleHealthPanel>
               child: Text(
                 _loaded ? _statusLine() : '',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.7),
+                      color: PloyColors.fromWhiteAlpha(0.7),
                     ),
                 textAlign: TextAlign.center,
               ),
@@ -806,7 +804,7 @@ class _AppleHealthPanelState extends ConsumerState<AppleHealthPanel>
         Text(
           'Open Purple after workouts or sleep to refresh vitals. Use Health Settings to change what Purple can read.',
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Colors.white.withValues(alpha: 0.45),
+                color: PloyColors.fromWhiteAlpha(0.45),
                 height: 1.4,
               ),
           textAlign: TextAlign.center,
@@ -837,8 +835,8 @@ class _WebImportNote extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
-        color: Colors.white.withValues(alpha: 0.05),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        color: PloyColors.fromWhiteAlpha(0.05),
+        border: Border.all(color: PloyColors.fromWhiteAlpha(0.08)),
       ),
       child: Text(
         Platform.isIOS
@@ -847,7 +845,7 @@ class _WebImportNote extends StatelessWidget {
             : 'Previous data in your account may be from another device. '
                 'Tap Connect to link Health Connect on this phone.',
         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Colors.white.withValues(alpha: 0.55),
+              color: PloyColors.fromWhiteAlpha(0.55),
               height: 1.4,
             ),
       ),
@@ -871,12 +869,12 @@ class _NonNativeEmptyState extends StatelessWidget {
             height: 36,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Colors.white.withValues(alpha: 0.08),
+              color: PloyColors.fromWhiteAlpha(0.08),
             ),
             child: Icon(
               Icons.smartphone,
               size: 18,
-              color: Colors.white.withValues(alpha: 0.85),
+              color: PloyColors.fromWhiteAlpha(0.85),
             ),
           ),
           const SizedBox(width: 12),
@@ -887,8 +885,7 @@ class _NonNativeEmptyState extends StatelessWidget {
                 Text(
                   'Apple Health',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontFamily: 'Georgia',
-                        color: Colors.white.withValues(alpha: 0.92),
+                        color: PloyColors.ink,
                       ),
                 ),
                 const SizedBox(height: 4),
@@ -896,7 +893,7 @@ class _NonNativeEmptyState extends StatelessWidget {
                   'Install the Purple iOS app to connect HealthKit directly. '
                   'On web, use Health Auto Export at purplelife.org/tools.',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.55),
+                        color: PloyColors.fromWhiteAlpha(0.55),
                         height: 1.4,
                       ),
                 ),

@@ -9,6 +9,7 @@ import '../data/data_style.dart';
 import '../shared/glass_helpers.dart';
 import '../seizures/seizure_repository.dart';
 import '../vitals/vitals_repository.dart';
+import '../../design/ploy_colors.dart';
 
 /// Eyebrow + serif title pair used across Insights sections.
 class InsightsSectionHeader extends StatelessWidget {
@@ -64,7 +65,7 @@ class VitalTile extends StatelessWidget {
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
                   letterSpacing: 1.1,
                   fontSize: 11,
-                  color: Colors.white.withValues(alpha: 0.55),
+                  color: PloyColors.fromWhiteAlpha(0.55),
                 ),
           ),
           const SizedBox(height: 8),
@@ -73,7 +74,7 @@ class VitalTile extends StatelessWidget {
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   fontFamily: PurpleType.serif,
                   fontFeatures: const [FontFeature.tabularFigures()],
-                  color: Colors.white.withValues(alpha: 0.95),
+                  color: PloyColors.fromWhiteAlpha(0.95),
                 ),
           ),
           const SizedBox(height: 2),
@@ -81,7 +82,7 @@ class VitalTile extends StatelessWidget {
             sub,
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
                   fontSize: 11,
-                  color: Colors.white.withValues(alpha: 0.45),
+                  color: PloyColors.fromWhiteAlpha(0.45),
                 ),
           ),
         ],
@@ -151,7 +152,7 @@ class CategoryTile extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.9),
+                  color: PloyColors.fromWhiteAlpha(0.9),
                   fontWeight: FontWeight.w500,
                 ),
           ),
@@ -162,7 +163,7 @@ class CategoryTile extends StatelessWidget {
                 : '$count ${count == 1 ? 'record' : 'records'}',
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
                   fontSize: 11,
-                  color: Colors.white.withValues(alpha: 0.45),
+                  color: PloyColors.fromWhiteAlpha(0.45),
                 ),
           ),
         ],
@@ -281,7 +282,7 @@ class SeizureHeatmap extends StatelessWidget {
     final columns = (grid.length / 7).ceil();
 
     Color intensity(int n) {
-      if (n <= 0) return Colors.white.withValues(alpha: 0.06);
+      if (n <= 0) return PloyColors.fromWhiteAlpha(0.06);
       if (n == 1) return purple.withValues(alpha: 0.30);
       if (n == 2) return purple.withValues(alpha: 0.55);
       if (n == 3) return purple.withValues(alpha: 0.75);
@@ -342,7 +343,7 @@ class SeizureHeatmap extends StatelessWidget {
                 'Less',
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
                       fontSize: 11,
-                      color: Colors.white.withValues(alpha: 0.45),
+                      color: PloyColors.fromWhiteAlpha(0.45),
                     ),
               ),
               const SizedBox(width: 6),
@@ -362,7 +363,7 @@ class SeizureHeatmap extends StatelessWidget {
                 'More',
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
                       fontSize: 11,
-                      color: Colors.white.withValues(alpha: 0.45),
+                      color: PloyColors.fromWhiteAlpha(0.45),
                     ),
               ),
             ],
@@ -438,7 +439,7 @@ class SeizureListItem extends StatelessWidget {
                       style:
                           Theme.of(context).textTheme.titleMedium?.copyWith(
                                 fontFamily: PurpleType.serif,
-                                color: Colors.white.withValues(alpha: 0.92),
+                                color: PloyColors.fromWhiteAlpha(0.92),
                               ),
                     ),
                     const SizedBox(height: 2),
@@ -447,7 +448,7 @@ class SeizureListItem extends StatelessWidget {
                       style:
                           Theme.of(context).textTheme.labelSmall?.copyWith(
                                 fontSize: 12,
-                                color: Colors.white.withValues(alpha: 0.5),
+                                color: PloyColors.fromWhiteAlpha(0.5),
                               ),
                     ),
                   ],
@@ -476,7 +477,7 @@ class SeizureListItem extends StatelessWidget {
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.6),
+                    color: PloyColors.fromWhiteAlpha(0.6),
                   ),
             ),
           ],
@@ -494,10 +495,10 @@ class _Badge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tone = color ?? Colors.white;
+    final tone = color ?? PloyColors.ink;
     final bg = color != null
         ? color!.withValues(alpha: 0.15)
-        : Colors.white.withValues(alpha: 0.08);
+        : PloyColors.fromWhiteAlpha(0.08);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
@@ -561,7 +562,7 @@ class InsightsTrendChart extends StatelessWidget {
             'LAST 14 NIGHTS',
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
                   letterSpacing: 1.1,
-                  color: Colors.white.withValues(alpha: 0.55),
+                  color: PloyColors.fromWhiteAlpha(0.55),
                 ),
           ),
           const SizedBox(height: 16),
@@ -612,7 +613,7 @@ class InsightsTrendChart extends StatelessWidget {
                       style:
                           Theme.of(context).textTheme.labelSmall?.copyWith(
                                 fontSize: 12,
-                                color: Colors.white.withValues(alpha: 0.6),
+                                color: PloyColors.fromWhiteAlpha(0.6),
                               ),
                     ),
                   ],

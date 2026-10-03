@@ -17,17 +17,17 @@ Format:
   Worker JWT sign-in and replaces the dark sign-in chrome.
 
 - [ ] **`tf33-ploy-signin-upload`** — `flutter/pubspec.yaml` is `1.0.0+33`.
-  Sign-in, password reset, and welcome onboarding use the live Ploy light
-  shield. Password sign-in still uses Worker `POST /api/auth/sign-in` and
-  that JWT on `/api/data/query`. Mac operator merges, then
+  Sign-in uses the Ploy shield, and the signed-in app uses the same light
+  Ploy palette. Password sign-in still uses Worker `POST /api/auth/sign-in`
+  and that JWT on `/api/data/query`. Mac operator merges, then
   `bun run ios:testflight`. Cloud agents must not upload. Do not upload
   `1.0.0+31` (GoTrue tokens 401 on Worker data APIs) or `1.0.0+32` (dark
-  sign-in, not uploaded). _Raised 2026-10-03._
+  sign-in, not uploaded). Build 33 was not uploaded before the full reskin.
+  _Raised 2026-10-03._
 
-- [ ] **`flutter-product-dark-shell`** — Today, Meds, Journal, and the rest of
-  the signed-in app still use the dark liquid-glass shell. The Ploy light
-  system is only on sign-in, reset password, and welcome onboarding. A full
-  product reskin is a separate change. _Raised 2026-10-03._
+- [x] ~~**`flutter-product-dark-shell`**~~ — RESOLVED 2026-10-03: Today, Meds,
+  Journal, Vitals, Tools, Settings, Ask Maya, care, reports, sheets, and
+  empty states use the Ploy light tokens. No dark liquid-glass shell remains.
 
 - [ ] **`flutter-native-oauth-www-deploy`** — Google/Apple sign-in from the
   Flutter app opens Worker `/api/auth/oauth/{provider}` and expects the www

@@ -1,10 +1,16 @@
 ## Current snapshot
 
-**2026-10-03 Flutter 1.0.0+33 Ploy sign-in chrome (not uploaded, no Worker deploy):**
-Flutter sign-in, password reset, and welcome onboarding use the live Ploy
-light shield (`PrivacyShield`, white card, canvas `#F8F7FA`). Password sign-in
-still posts `POST /api/auth/sign-in` and keeps the Worker JWT. Today and Meds
-stay on the dark shell. Build is `1.0.0+33`. Do not upload. Do not deploy Workers.
+**2026-10-03 Flutter 1.0.0+33 full Ploy light shell (not uploaded, no Worker deploy):**
+Signed-in Flutter screens use the live Ploy light palette (canvas `#F8F7FA`,
+white cards, ink `#18161D`, accent `#8E61CF`). That includes Today, Meds,
+Journal, Vitals, Tools, Settings, Ask Maya, care, reports, sheets, and empty
+states. Sign-in stays the Ploy shield. Password sign-in still posts
+`POST /api/auth/sign-in`. Build stays `1.0.0+33` (never uploaded). Do not
+upload. Do not deploy Workers.
+
+**2026-10-03 Flutter 1.0.0+33 Ploy sign-in chrome (superseded the same day):**
+Sign-in, password reset, and welcome onboarding were ported first. The
+follow-up the same day moved the rest of the app off the dark shell.
 
 **2026-10-02 Flutter 1.0.0+32 layout P0s folded into the Worker auth PR (not uploaded):**
 Journal Save clears the Dynamic Island inside the shell. Meds Taken stays 44pt.
@@ -200,6 +206,16 @@ Tip `main` @ `7682539d`. Next: TF28 device QA matrix.
 clean + 254/254; web QA video ready. See Log for details.
 
 ## Log
+
+### 2026-10-03T12:20:14Z - Flutter signed-in app uses the Ploy light system, build 33
+
+- **Requested:** Bring every tester-visible Flutter screen onto the live Ploy light system (Today, Meds, Journal, Vitals, Tools, Settings, Ask Maya, sheets, empty states). Do not leave the old dark liquid-glass look. Keep Worker JWT auth. Stay on `1.0.0+33` because that build was never uploaded. Do not merge or deploy Workers.
+- **Done:** `design/tokens.json` light and dark buckets, and the Flutter copies, are the `.purplelife-pilot` palette. `PloyColors` replaces white-on-dark text. Glass cards, sheets, dialogs, the tab bar, and the score hero are light. Appearance Dark and System still render that light look, because Ploy has no dark theme. Auth calls are unchanged.
+- **Issues:** Flutter keeps its own screen structure (date strip, score tiles, doses, Ask Maya tab, capture button). Pilot illustrations such as WellbeingBloom were not copied. No Worker deploy. Build 33 is not uploaded.
+- **Stand / next:** PR #72 updated. Mac operator merges, then `bun run ios:testflight` for build 33. Do not upload 31 or 32. No Worker deploy.
+- **Who / where:** cloud agent, `cursor/flutter-ploy-signin-4315`.
+- **Evidence:** `flutter analyze` clean. `flutter test` 285/285.
+- **Timestamp:** 2026-10-03T12:20:14Z
 
 ### 2026-10-03T11:53:15Z - Flutter sign-in matches the live Ploy shield, build 33
 

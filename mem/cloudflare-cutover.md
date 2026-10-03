@@ -17,6 +17,6 @@
 - **Flutter (2026-10-03):** TestFlight default `DATA_BACKEND=cloudflare`.
   Password sign-in is `POST /api/auth/sign-in`. That HS256 JWT is the bearer
   for `/api/data/query` and R2 storage. `DATA_BACKEND=supabase` is rollback
-  only. Build `1.0.0+33` uses the live Ploy light shield on sign-in, reset,
-  and welcome. Today and Meds stay dark. Native OAuth handoff needs a www
+  only. Build `1.0.0+33` uses the live Ploy light system on sign-in and on
+  the signed-in app. Native OAuth handoff needs a www
   deploy. No refresh token (1 hour). Do not upload build 31 or 32.

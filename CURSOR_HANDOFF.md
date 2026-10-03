@@ -1,10 +1,11 @@
-Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-10-03 (Flutter `1.0.0+33` Ploy sign-in chrome, not uploaded; ASC tip **1.0 (30)** VALID; **do not** wrangler deploy and **do not** run `ios:testflight` from a cloud agent).
+Operational state of the PurpleLife project for the next agent or engineer. Last updated: 2026-10-03 (Flutter `1.0.0+33` full Ploy light shell, not uploaded; ASC tip **1.0 (30)** VALID; **do not** wrangler deploy and **do not** run `ios:testflight` from a cloud agent).
 
-**Recent (2026-10-03): Flutter build 33 Ploy sign-in.** Sign-in matches the
-live Ploy shield ("Sign in to PurpleLife.", light canvas, white card, purple
-shield). Reset password and welcome onboarding use the same chrome. Password
-sign-in is still `POST /api/auth/sign-in`. Today and Meds stay dark.
-`flutter/pubspec.yaml` is `1.0.0+33`. No Worker deploy. No TestFlight upload.
+**Recent (2026-10-03): Flutter build 33 Ploy light app.** Sign-in keeps the
+live Ploy shield. Today, Meds, Journal, Vitals, Tools, Settings, Ask Maya,
+sheets, and empty states use the same light tokens (canvas `#F8F7FA`, white
+cards, accent `#8E61CF`). Password sign-in is still `POST /api/auth/sign-in`.
+`flutter/pubspec.yaml` stays `1.0.0+33` (never uploaded). No Worker deploy.
+No TestFlight upload.
 
 **Recent (2026-10-02): Flutter build 32 layout P0s, same PR as Worker auth.**
 Journal Save clears the Dynamic Island (shell `removePadding` had also zeroed

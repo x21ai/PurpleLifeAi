@@ -7,6 +7,7 @@ import '../../shell/routes.dart';
 import '../shared/glass_helpers.dart';
 import 'report_file_picker.dart';
 import 'reports_repository.dart';
+import '../../design/ploy_colors.dart';
 
 /// Lab report upload mirroring web `/reports/new` (storage + document row).
 class ReportsUploadScreen extends ConsumerStatefulWidget {
@@ -88,11 +89,11 @@ class _ReportsUploadScreenState extends ConsumerState<ReportsUploadScreen> {
                 onPressed: _uploading ? null : () => context.go(AppRoutes.reportsDocuments),
                 icon: Icon(
                   Icons.arrow_back,
-                  color: Colors.white.withValues(alpha: 0.55),
+                  color: PloyColors.fromWhiteAlpha(0.55),
                 ),
                 label: Text(
                   'Reports',
-                  style: TextStyle(color: Colors.white.withValues(alpha: 0.55)),
+                  style: TextStyle(color: PloyColors.fromWhiteAlpha(0.55)),
                 ),
               ),
               const SizedBox(height: 16),
@@ -100,7 +101,7 @@ class _ReportsUploadScreenState extends ConsumerState<ReportsUploadScreen> {
                 'UPLOAD',
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
                       letterSpacing: 1.2,
-                      color: Colors.white.withValues(alpha: 0.45),
+                      color: PloyColors.fromWhiteAlpha(0.45),
                     ),
               ),
               const SizedBox(height: 8),
@@ -108,14 +109,14 @@ class _ReportsUploadScreenState extends ConsumerState<ReportsUploadScreen> {
                 'Add a lab\nreport',
                 style: Theme.of(context).textTheme.displaySmall?.copyWith(
                       height: 1.02,
-                      color: Colors.white.withValues(alpha: 0.95),
+                      color: PloyColors.fromWhiteAlpha(0.95),
                     ),
               ),
               const SizedBox(height: 12),
               Text(
                 'PDF or photo, up to 15 MB each. Purple extracts metrics for trends. Educational only, not medical advice.',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.65),
+                      color: PloyColors.fromWhiteAlpha(0.65),
                       height: 1.5,
                     ),
               ),
@@ -141,7 +142,7 @@ class _ReportsUploadScreenState extends ConsumerState<ReportsUploadScreen> {
                               Icon(
                                 Icons.description_outlined,
                                 size: 18,
-                                color: Colors.white.withValues(alpha: 0.6),
+                                color: PloyColors.fromWhiteAlpha(0.6),
                               ),
                               const SizedBox(width: 10),
                               Expanded(
@@ -151,7 +152,7 @@ class _ReportsUploadScreenState extends ConsumerState<ReportsUploadScreen> {
                                       .textTheme
                                       .bodySmall
                                       ?.copyWith(
-                                        color: Colors.white.withValues(alpha: 0.85),
+                                        color: PloyColors.fromWhiteAlpha(0.85),
                                       ),
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -161,7 +162,7 @@ class _ReportsUploadScreenState extends ConsumerState<ReportsUploadScreen> {
                                 icon: Icon(
                                   Icons.close,
                                   size: 18,
-                                  color: Colors.white.withValues(alpha: 0.5),
+                                  color: PloyColors.fromWhiteAlpha(0.5),
                                 ),
                               ),
                             ],

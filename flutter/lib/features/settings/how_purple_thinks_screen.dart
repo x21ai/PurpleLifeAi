@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../design/purple_type.dart';
 import '../../shell/routes.dart';
 import '../shared/glass_helpers.dart';
+import '../../design/ploy_colors.dart';
 
 /// "How Purple thinks" article (web `settings.how-purple-thinks.tsx`).
 class HowPurpleThinksScreen extends StatelessWidget {
@@ -25,10 +26,10 @@ class HowPurpleThinksScreen extends StatelessWidget {
               TextButton.icon(
                 onPressed: () => context.go(AppRoutes.settings),
                 icon: Icon(Icons.arrow_back,
-                    color: Colors.white.withValues(alpha: 0.55)),
+                    color: PloyColors.fromWhiteAlpha(0.55)),
                 label: Text(
                   'Settings',
-                  style: TextStyle(color: Colors.white.withValues(alpha: 0.55)),
+                  style: TextStyle(color: PloyColors.fromWhiteAlpha(0.55)),
                 ),
               ),
               const SizedBox(height: 16),
@@ -36,7 +37,7 @@ class HowPurpleThinksScreen extends StatelessWidget {
                 'HOW PURPLE THINKS',
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
                       letterSpacing: 1.2,
-                      color: Colors.white.withValues(alpha: 0.45),
+                      color: PloyColors.fromWhiteAlpha(0.45),
                     ),
               ),
               const SizedBox(height: 8),
@@ -50,7 +51,7 @@ class HowPurpleThinksScreen extends StatelessWidget {
                       fontFamily: PurpleType.serif,
                       fontSize: 40,
                       height: 1.05,
-                      color: Colors.white.withValues(alpha: 0.95),
+                      color: PloyColors.fromWhiteAlpha(0.95),
                     ),
               ),
               const SizedBox(height: 24),
@@ -135,7 +136,7 @@ class _ThinkCard extends StatelessWidget {
                   title,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontFamily: PurpleType.serif,
-                        color: Colors.white.withValues(alpha: 0.95),
+                        color: PloyColors.fromWhiteAlpha(0.95),
                       ),
                 ),
               ),
@@ -145,7 +146,7 @@ class _ThinkCard extends StatelessWidget {
           Text(
             body,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.75),
+                  color: PloyColors.fromWhiteAlpha(0.75),
                   height: 1.5,
                 ),
           ),

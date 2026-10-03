@@ -60,10 +60,8 @@ class SheetPalette {
   Color get inputFill =>
       isLight ? backgroundTertiary : textPrimary.withValues(alpha: 0.04);
   Color get inputBorder => cardBorder;
-  Color get dropdownSurface =>
-      isLight ? backgroundSecondary : const Color(0xFF1A1224);
-  Color get modalSurface =>
-      isLight ? backgroundSecondary : const Color(0xFF14101C);
+  Color get dropdownSurface => backgroundSecondary;
+  Color get modalSurface => backgroundSecondary;
 
   Color get chipInactiveFill => inputFill;
   Color get chipInactiveBorder =>
